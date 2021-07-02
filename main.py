@@ -79,32 +79,10 @@ def distance_check(xs,ys,zs,linex,liney,linez):
                     phase_types[i,j,k] = 3
     return phase_types
 
-n = 40
-
-x_vals = np.linspace(-100,100,n)
-y_vals = np.linspace(-100,100,n)
-z_vals = np.linspace(-100,100,n)
-
-xs = np.zeros((n,n,n))
-ys = np.zeros((n,n,n))
-zs = np.zeros((n,n,n))
-
-for i in range(len(xs)):
-    for j in range(len(xs[i])):
-        for k in range(len(xs[i,j])):
-            xs[i,j,k] = x_vals[i]
-            ys[i,j,k] = y_vals[j]
-            zs[i,j,k] = z_vals[k]
-
-linex,liney,linez = throughline(np.linspace(0,1,30))
-phase_types = distance_check(xs,ys,zs,linex,liney,linez)
-
-#Creates the graph
-import matplotlib.pyplot as plt
-plt.imshow(phase_types[20],extent = (-100,100,-100,100),origin = "lower")
-plt.colorbar()
-def identify_phases():
-    pass
+def identify_phases(xs,ys,zs):
+    linex,liney,linez = throughline(np.linspace(0,1,30))
+    phase_types = distance_check(xs,ys,zs,linex,liney,linez)
+    return phase_types
 
 #math section 
 #code leader: Jewon
