@@ -1,10 +1,8 @@
-import numpy as np
-
 def main_function(geo_args, phys_args):
     background_grid = do_setup()
-    phase_types = identify_phases(background_grid, geo_args)
-    fields = create_fields(background_grid, phase_grid, phys_args)
-    ds = convert_to_dataset(fields)
+    phase_grid = geometry.identify_phases(background_grid, geo_args)
+    fields = math.create_fields(background_grid, phase_grid, phys_args)
+    ds = yt_section.convert_to_dataset(fields)
     return ds
 
 def do_setup(n=50,box_size = 200):
@@ -17,16 +15,6 @@ def do_setup(n=50,box_size = 200):
     ys = np.tile(y_vals,(n,n,1)).transpose((0,1,2))
     zs = np.tile(z_vals,(n,n,1)).transpose((1,2,0))
     return xs,ys,zs
-
-def fake_phase_types(xs,ys,zs):
-    streams = (xs>0)*(np.abs(ys)<20)*(np.abs(zs)<20)
-    interfaces = np.logical_xor((xs>0)*(np.abs(ys)<30)*(np.abs(zs)<30),streams)
-    bulk = np.logical_not(np.logical_or(streams,interfaces))
-    phase_types = xs*0.0
-    phase_types[streams] = 1
-    phase_types[interfaces] = 2
-    phase_types[bulk] = 3
-    return phase_types
 
 #geometry section 
 #code leader: Parsa
@@ -88,7 +76,30 @@ def distance_check(xs,ys,zs,linex,liney,linez):
                     phase_types[i,j,k] = 3
     return phase_types
 
+n = 40
 
+x_vals = np.linspace(-100,100,n)
+y_vals = np.linspace(-100,100,n)
+z_vals = np.linspace(-100,100,n)
+
+xs = np.zeros((n,n,n))
+ys = np.zeros((n,n,n))
+zs = np.zeros((n,n,n))
+
+for i in range(len(xs)):
+    for j in range(len(xs[i])):
+        for k in range(len(xs[i,j])):
+            xs[i,j,k] = x_vals[i]
+            ys[i,j,k] = y_vals[j]
+            zs[i,j,k] = z_vals[k]
+
+linex,liney,linez = throughline(np.linspace(0,1,30))
+phase_types = distance_check(xs,ys,zs,linex,liney,linez)
+
+#Creates the graph
+import matplotlib.pyplot as plt
+plt.imshow(phase_types[20],extent = (-100,100,-100,100),origin = "lower")
+plt.colorbar()
 def identify_phases():
     pass
 
@@ -99,8 +110,8 @@ def create_fields():
 
 #yt section 
 #code leader: Vayun
-def convert_to_dataset(fields): #'fields' has fields ordered with the following: densities, temperatures, metallicities.
+def convert_to_dataset(fields, bbox): #assuming that the 'fields' parameter has fields ordered with the following: densities, temperatures, metallicities.
     data = {('gas','density'):(fields[0], 'g*cm**(-3)'),('gas','temperature'):(fields[1],'K'),('gas','metallicity'):(fields[2],'Zsun')}
     bbox = np.array([[-max_size,max_size],[-max_size,max_size],[-max_size,max_size]])
     ds = yt.load_uniform_grid(data, densities.shape, length_unit="kpc", bbox=bbox)
-    return ds
+    trident.add_ion_fields(ds, ions=['O VI'], ftype="gas")
