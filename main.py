@@ -3,9 +3,9 @@ import yt
 
 def main_function(geo_args, phys_args):
     background_grid = do_setup()
-    phase_grid = geometry.identify_phases(background_grid, geo_args)
-    fields = math.create_fields(background_grid, phase_grid, phys_args)
-    ds = yt_section.convert_to_dataset(fields)
+    phase_grid = identify_phases(background_grid, geo_args)
+    fields = create_fields(background_grid, phase_grid, phys_args)
+    ds = convert_to_dataset(fields)
     return ds
 
 def do_setup(n=50,box_size = 200):
