@@ -40,8 +40,8 @@ def create_fields():
 
 #yt section 
 #code leader: Vayun
-def convert_to_dataset(fields, bbox): #assuming that the 'fields' parameter has fields ordered with the following: densities, temperatures, metallicities.
+def convert_to_dataset(fields): #'fields' has fields ordered with the following: densities, temperatures, metallicities.
     data = {('gas','density'):(fields[0], 'g*cm**(-3)'),('gas','temperature'):(fields[1],'K'),('gas','metallicity'):(fields[2],'Zsun')}
     bbox = np.array([[-max_size,max_size],[-max_size,max_size],[-max_size,max_size]])
     ds = yt.load_uniform_grid(data, densities.shape, length_unit="kpc", bbox=bbox)
-    trident.add_ion_fields(ds, ions=['O VI'], ftype="gas")
+    return ds
