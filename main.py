@@ -1,3 +1,6 @@
+import numpy as np
+import yt
+
 def main_function(geo_args, phys_args):
     background_grid = do_setup()
     phase_grid = geometry.identify_phases(background_grid, geo_args)
@@ -112,5 +115,6 @@ def create_fields():
 #code leader: Vayun
 def convert_to_dataset(fields): #assuming that the 'fields' parameter has fields ordered with the following: densities, temperatures, metallicities.
     data = {('gas','density'):(fields[0], 'g*cm**(-3)'),('gas','temperature'):(fields[1],'K'),('gas','metallicity'):(fields[2],'Zsun')}
-    bbox = np.array([[-max_size,max_size],[-max_size,max_size],[-max_size,max_size]])
-    ds = yt.load_uniform_grid(data, densities.shape, length_unit="kpc", bbox=bbox)
+    bbox = np.array([[np.amin(xs),np.amax(xs)],[np.amin(ys),np.amax(ys),],[np.amin(zs),np.amax(zs),]])
+    ds = yt.load_uniform_grid(data, fields[0].shape, length_unit="kpc", bbox=bbox)
+    return ds
