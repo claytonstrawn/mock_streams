@@ -86,8 +86,37 @@ def identify_phases(xs,ys,zs):
 
 #math section 
 #code leader: Jewon
-def create_fields():
-    pass
+
+def temperature_field(phase_types):
+    temperature = np.zeros((n, n, n))
+    temperature[phase_types == 1] = 1e4
+    temperature[phase_types == 2] = 1e5
+    temperature[phase_types == 3] = 1e6
+    return temperature
+
+def density_field(phase_types):
+    rho_0 = np.zeros((n, n, n))
+    rs = np.sqrt(xs**2+ys**2)
+    rho_0[phase_types == 1] = 10**-3.5
+    rho_0[phase_types == 2] = 10**-4.3
+    rho_0[phase_types == 3] = 10**-5.4
+    
+    density = rho_0 * (rs/100)**-1.47
+    return density
+
+def metallicity_field(phase_types):
+    metallicity = np.zeros((n, n, n))
+    metallicity[phase_types == 1] = -0.05
+    metallicity[phase_types == 2] = 0.03
+    metallicity[phase_types == 3] = 0.23
+    return metallicity
+
+def create_fields(background_grid, phase_types, phys_args):
+    fields = []
+    fields.append(density_field(phase_types))
+    fields.append(temperature_field(phase_types))
+    fields.append(metallicity_field(phase_types))
+    return fields
 
 #yt section 
 #code leader: Vayun
