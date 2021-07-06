@@ -10,7 +10,7 @@ def main_function(geo_args, phys_args):
     ds = convert_to_dataset(fields)
     return ds
 
-def do_setup(n=50,box_size = 200,Rvir):
+def do_setup(Rvir,n=50,box_size = 200):
     max_size = box_size/2
     x_vals = np.linspace(-max_size,max_size,n)
     y_vals = np.linspace(-max_size,max_size,n)
