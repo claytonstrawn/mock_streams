@@ -2,6 +2,7 @@ import numpy as np
 import yt
 import trident
 import mock_streams.defaults
+import mock_streams.distance_checks
 
 def main_function(geo_args, phys_args):
     background_grid,Rvir = do_setup()
@@ -42,55 +43,13 @@ def throughline(r):
     z = (f-c)*r + c
     return x,y,z
 
-def distance_to_line(x,y,z,linex,liney,linez):
-    #x is a number between 0 and 1
-    #y is a number between 0 and 1
-    #z is a number between 0 and 1
-    #linex,liney,linez are arrays outputed from throughline
-    distances = np.zeros(len(linex))
-    for i in range(len(linex)):
-        xpos = linex[i]
-        ypos = liney[i]
-        zpos = linez[i]
-        dx = (xpos-x)**2
-        dy = (ypos-y)**2
-        dz = (zpos-z)**2
-        distance = np.sqrt(dx+dy+dz)
-        distances[i] = distance
-    return np.amin(distances)
-
-#Measures the distance from a random point to the line calculate above
-def field_distance_to_line(xs,ys,zs,linex,liney,linez):
-    all_distances = xs*0.0
-    for i in range(len(xs)):
-        for j in range(len(xs[i])):
-            for k in range(len(xs[i,j])):
-                all_distances[i,j,k] = distance_to_line(xs[i,j,k],ys[i,j,k],zs[i,j,k],linex,liney,linez)
-    return all_distances
-
-#Assigns a number to the distances of random numbers which determines whether 
-#they are in the stream,interface or bulk.
-def distance_check(xs,ys,zs,linex,liney,linez):
-    all_distances = field_distance_to_line(xs,ys,zs,linex,liney,linez)
-    phase_types = xs*0.0
-    for i in range(len(xs)):
-        for j in range(len(xs[i])):
-            for k in range(len(xs[i,j])):
-                if all_distances[i,j,k] < 30:
-                    phase_types[i,j,k] = 1
-                elif 30 < all_distances[i,j,k] < 40:
-                    phase_types[i,j,k] = 2
-                else:
-                    phase_types[i,j,k] = 3
-    return phase_types
-
 def identify_phases(background_grid, geo_args):
     xs = background_grid[0]
     ys = background_grid[1]
     zs = background_grid[2]
     
     linex,liney,linez = throughline(np.linspace(0,1,30))
-    phase_types = distance_check(xs,ys,zs,linex,liney,linez)
+    phase_types = mock_streams.distance_checks.variable_distance_check(xs,ys,zs,linex,liney,linez)
     return phase_types
 
 #math section 

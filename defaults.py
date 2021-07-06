@@ -1,5 +1,8 @@
-import numpy as np
 
+#geometry default arguments
+
+
+#math default arguments
 temperature_1 = 1e4
 temperature_2 = 1e5
 temperature_3 = 1e6
