@@ -1,5 +1,6 @@
 import numpy as np
 import yt
+import trident
 
 def main_function(geo_args, phys_args):
     background_grid = do_setup()
@@ -125,3 +126,10 @@ def convert_to_dataset(fields): #assuming that the 'fields' parameter has fields
     bbox = np.array([[np.amin(xs),np.amax(xs)],[np.amin(ys),np.amax(ys),],[np.amin(zs),np.amax(zs),]])
     ds = yt.load_uniform_grid(data, fields[0].shape, length_unit="kpc", bbox=bbox)
     return ds
+
+def create_ion_fields(ds) #for analysis of created dataset
+    trident.add_ion_fields(ds, ions=['O VI'], ftype="gas")
+    yt.ProjectionPlot(ds, 0, "O_p5_ion_fraction")
+    yt.ProjectionPlot(ds, 0, "O_p5_number_density")
+    yt.ProjectionPlot(ds, 0, "O_p5_density")
+    yt.ProjectionPlot(ds, 0, "O_p5_mass")
