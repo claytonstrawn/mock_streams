@@ -95,14 +95,20 @@ def temperature_field(phase_types):
     temperature[phase_types == 3] = 1e6
     return temperature
 
-def density_field(phase_types):
+def density_field(background_grid, phase_types):
+    xs = background_grid[0]
+    ys = background_grid[1]
+    zs = background_grid[2]
+
     rho_0 = np.zeros((n, n, n))
-    rs = np.sqrt(xs**2+ys**2)
+    rvir = 100
+    rs = np.sqrt(xs**2+ys**2+zs**2)
+
     rho_0[phase_types == 1] = 10**-3.5
     rho_0[phase_types == 2] = 10**-4.3
     rho_0[phase_types == 3] = 10**-5.4
     
-    density = rho_0 * (rs/100)**-1.47
+    density = rho_0 * (rs/rvir)**-1.47
     return density
 
 def metallicity_field(phase_types):
