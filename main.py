@@ -3,13 +3,13 @@ import yt
 import trident
 
 def main_function(geo_args, phys_args):
-    background_grid = do_setup()
+    background_grid,Rvir = do_setup()
     phase_grid = identify_phases(background_grid, geo_args)
-    fields = create_fields(background_grid, phase_grid, phys_args)
+    fields = create_fields(background_grid, phase_grid, phys_args, Rvir)
     ds = convert_to_dataset(fields)
     return ds
 
-def do_setup(n=50,box_size = 200):
+def do_setup(n=50,box_size = 200,Rvir):
     max_size = box_size/2
     x_vals = np.linspace(-max_size,max_size,n)
     y_vals = np.linspace(-max_size,max_size,n)
@@ -18,7 +18,10 @@ def do_setup(n=50,box_size = 200):
     xs = np.tile(x_vals,(n,n,1)).transpose((2,1,0))
     ys = np.tile(y_vals,(n,n,1)).transpose((0,1,2))
     zs = np.tile(z_vals,(n,n,1)).transpose((1,2,0))
-    return xs,ys,zs
+    
+    if not Rvir:
+        Rvir = box_size/2
+    return (xs,ys,zs),Rvir
 
 #geometry section 
 #code leader: Parsa
@@ -96,8 +99,9 @@ def temperature_field(phase_types):
     return temperature
 
 def density_field(phase_types):
+    xs = background_grid[0]
     rho_0 = np.zeros((n, n, n))
-    rs = np.sqrt(xs**2+ys**2)
+    rs = np.sqrt(xs**2+ys**2+zs**2)
     rho_0[phase_types == 1] = 10**-3.5
     rho_0[phase_types == 2] = 10**-4.3
     rho_0[phase_types == 3] = 10**-5.4
@@ -127,7 +131,7 @@ def convert_to_dataset(fields): #assuming that the 'fields' parameter has fields
     ds = yt.load_uniform_grid(data, fields[0].shape, length_unit="kpc", bbox=bbox)
     return ds
 
-def create_ion_fields(ds) #for analysis of created dataset
+def create_ion_fields(ds): #for analysis of created dataset
     trident.add_ion_fields(ds, ions=['O VI'], ftype="gas")
     yt.ProjectionPlot(ds, 0, "O_p5_ion_fraction")
     yt.ProjectionPlot(ds, 0, "O_p5_number_density")
