@@ -1,6 +1,7 @@
 import numpy as np
 import yt
 import trident
+import mock_streams.defaults
 
 def main_function(geo_args, phys_args):
     background_grid = do_setup()
@@ -90,37 +91,37 @@ def identify_phases(xs,ys,zs):
 
 def temperature_field(phase_types):
     temperature = np.zeros((n, n, n))
-    temperature[phase_types == 1] = 1e4
-    temperature[phase_types == 2] = 1e5
-    temperature[phase_types == 3] = 1e6
+    temperature[phase_types == 1] = mock_streams.defaults.temperature_1
+    temperature[phase_types == 2] = mock_streams.defaults.temperature_2
+    temperature[phase_types == 3] = mock_streams.defaults.temperature_3
     return temperature
 
-def density_field(background_grid, phase_types):
+def density_field(background_grid, phase_types, Rvir):
     xs = background_grid[0]
     ys = background_grid[1]
     zs = background_grid[2]
 
     rho_0 = np.zeros((n, n, n))
-    rvir = 100
     rs = np.sqrt(xs**2+ys**2+zs**2)
+    beta = mock_streams.defaults.beta
 
-    rho_0[phase_types == 1] = 10**-3.5
-    rho_0[phase_types == 2] = 10**-4.3
-    rho_0[phase_types == 3] = 10**-5.4
+    rho_0[phase_types == 1] = mock_streams.defaults.rho_0_1
+    rho_0[phase_types == 2] = mock_streams.defaults.rho_0_2
+    rho_0[phase_types == 3] = mock_streams.defaults.rho_0_1
     
-    density = rho_0 * (rs/rvir)**-1.47
+    density = rho_0 * (rs/Rvir)**beta
     return density
 
 def metallicity_field(phase_types):
     metallicity = np.zeros((n, n, n))
-    metallicity[phase_types == 1] = 10**-0.05
-    metallicity[phase_types == 2] = 10**0.03
-    metallicity[phase_types == 3] = 10**0.23
+    metallicity[phase_types == 1] = mock_streams.defaults.metallicity_1
+    metallicity[phase_types == 2] = mock_streams.defaults.metallicity_2
+    metallicity[phase_types == 3] = mock_streams.defaults.metallicity_3
     return metallicity
 
-def create_fields(background_grid, phase_types, phys_args):
+def create_fields(background_grid, phase_types, phys_args, Rvir):
     fields = []
-    fields.append(density_field(phase_types))
+    fields.append(density_field(background_grid, phase_types))
     fields.append(temperature_field(phase_types))
     fields.append(metallicity_field(phase_types))
     return fields
