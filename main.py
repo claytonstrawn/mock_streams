@@ -4,13 +4,13 @@ import trident
 import mock_streams.defaults
 
 def main_function(geo_args, phys_args):
-    background_grid = do_setup()
+    background_grid,Rvir = do_setup()
     phase_grid = identify_phases(background_grid, geo_args)
-    fields = create_fields(background_grid, phase_grid, phys_args)
+    fields = create_fields(background_grid, phase_grid, phys_args, Rvir)
     ds = convert_to_dataset(fields)
     return ds
 
-def do_setup(n=50,box_size = 200):
+def do_setup(n=50,box_size = 200,Rvir):
     max_size = box_size/2
     x_vals = np.linspace(-max_size,max_size,n)
     y_vals = np.linspace(-max_size,max_size,n)
@@ -19,7 +19,10 @@ def do_setup(n=50,box_size = 200):
     xs = np.tile(x_vals,(n,n,1)).transpose((2,1,0))
     ys = np.tile(y_vals,(n,n,1)).transpose((0,1,2))
     zs = np.tile(z_vals,(n,n,1)).transpose((1,2,0))
-    return xs,ys,zs
+    
+    if not Rvir:
+        Rvir = box_size/2
+    return (xs,ys,zs),Rvir
 
 #geometry section 
 #code leader: Parsa
@@ -96,7 +99,7 @@ def temperature_field(phase_types):
     temperature[phase_types == 3] = mock_streams.defaults.temperature_3
     return temperature
 
-def density_field(background_grid, phase_types, Rvir):
+def density_field(background_grid, phase_types):
     xs = background_grid[0]
     ys = background_grid[1]
     zs = background_grid[2]
