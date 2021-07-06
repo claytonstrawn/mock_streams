@@ -84,7 +84,11 @@ def distance_check(xs,ys,zs,linex,liney,linez):
                     phase_types[i,j,k] = 3
     return phase_types
 
-def identify_phases(xs,ys,zs):
+def identify_phases(background_grid, geo_args):
+    xs = background_grid[0]
+    ys = background_grid[1]
+    zs = background_grid[2]
+    
     linex,liney,linez = throughline(np.linspace(0,1,30))
     phase_types = distance_check(xs,ys,zs,linex,liney,linez)
     return phase_types
