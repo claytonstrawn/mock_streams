@@ -113,9 +113,9 @@ def density_field(background_grid, phase_types):
 
 def metallicity_field(phase_types):
     metallicity = np.zeros((n, n, n))
-    metallicity[phase_types == 1] = -0.05
-    metallicity[phase_types == 2] = 0.03
-    metallicity[phase_types == 3] = 0.23
+    metallicity[phase_types == 1] = 10**-0.05
+    metallicity[phase_types == 2] = 10**0.03
+    metallicity[phase_types == 3] = 10**0.23
     return metallicity
 
 def create_fields(background_grid, phase_types, phys_args):
@@ -133,7 +133,7 @@ def convert_to_dataset(fields): #assuming that the 'fields' parameter has fields
     ds = yt.load_uniform_grid(data, fields[0].shape, length_unit="kpc", bbox=bbox)
     return ds
 
-def create_ion_fields(ds) #for analysis of created dataset
+def create_ion_fields(ds): #for analysis of created dataset
     trident.add_ion_fields(ds, ions=['O VI'], ftype="gas")
     yt.ProjectionPlot(ds, 0, "O_p5_ion_fraction")
     yt.ProjectionPlot(ds, 0, "O_p5_number_density")
