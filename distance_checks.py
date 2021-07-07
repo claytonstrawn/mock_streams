@@ -43,10 +43,14 @@ def distance_check(xs,ys,zs,linex,liney,linez):
     return phase_types
 
 
-def throughline(r):
-    x = (mock_streams.defaults.x2-mock_streams.defaults.x1)*r + mock_streams.defaults.x1
-    y = (mock_streams.defaults.y2-mock_streams.defaults.y1)*r + mock_streams.defaults.y1
-    z = (mock_streams.defaults.z2-mock_streams.defaults.z1)*r + mock_streams.defaults.z1
+def throughline(r,Rvir):
+    theta = np.random.random()*2*np.pi
+    x2 = Rvir*np.cos(theta)
+    y2 = Rvir*np.cos(theta)
+    z2 = 0
+    x = (x2-mock_streams.defaults.x1)*r + mock_streams.defaults.x1
+    y = (y2-mock_streams.defaults.y1)*r + mock_streams.defaults.y1
+    z = (z2-mock_streams.defaults.z1)*r + mock_streams.defaults.z1
     return x,y,z
 
 
@@ -54,10 +58,10 @@ def acceptable_distance(r):
     return mock_streams.defaults.stream_radius_at_Rvir*r
 
 
-def variable_distance_check(xs,ys,zs,linex,liney,linez):
+def variable_distance_check(xs,ys,zs,Rvir):
     phase_types = xs*0.0
     rs = np.sqrt(xs**2+ys**2+zs**2)
-    x_line,y_line,z_line = throughline(rs/100)
+    x_line,y_line,z_line = throughline(rs/100,Rvir)
     distance = np.sqrt((xs-x_line)**2+(ys-y_line)**2+(zs-z_line)**2)
     stream_distance = acceptable_distance(rs/100)
     

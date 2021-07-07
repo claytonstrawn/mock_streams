@@ -6,7 +6,7 @@ import mock_streams.distance_checks
 
 def main_function(geo_args, phys_args):
     background_grid,Rvir = do_setup()
-    phase_grid = identify_phases(background_grid, geo_args)
+    phase_grid = identify_phases(background_grid, geo_args,Rvir)
     fields = create_fields(background_grid, phase_grid, phys_args, Rvir)
     ds = convert_to_dataset(background_grid, fields)
     return ds
@@ -31,19 +31,13 @@ def do_setup(Rvir=100,n=50,box_size = 200):
 #random given values for 2-3D points along the sightline
 
 #defines the x,y,and z coordinates
-def throughline(r):
-    x = (mock_streams.defaults.x2-mock_streams.defaults.x1)*r + mock_streams.defaults.x1
-    y = (mock_streams.defaults.y2-mock_streams.defaults.y1)*r + mock_streams.defaults.y1
-    z = (mock_streams.defaults.z2-mock_streams.defaults.z1)*r + mock_streams.defaults.z1
-    return x,y,z
 
-def identify_phases(background_grid, geo_args):
+def identify_phases(background_grid, geo_args,Rvir):
     xs = background_grid[0]
     ys = background_grid[1]
     zs = background_grid[2]
     
-    linex,liney,linez = throughline(np.linspace(0,1,30))
-    phase_types = mock_streams.distance_checks.variable_distance_check_2(xs,ys,zs,linex,liney,linez)
+    phase_types = mock_streams.distance_checks.variable_distance_check(xs,ys,zs,Rvir)
     return phase_types
 
 #math section 
