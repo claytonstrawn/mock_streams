@@ -1,3 +1,9 @@
+x1 = 0
+y1 = 0
+z1 = 0
+x2 = 0
+y2 = 100
+z2 = 0
 
 #geometry default arguments
 

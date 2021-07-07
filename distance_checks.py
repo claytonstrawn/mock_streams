@@ -41,18 +41,13 @@ def distance_check(xs,ys,zs,linex,liney,linez):
                     phase_types[i,j,k] = 3
     return phase_types
 
-a = 0
-b = 0
-c = 0
-d = 0
-e = 100
-f = 0
 
 def throughline(r):
-    x = (d-a)*r + a
-    y = (e-b)*r + b
-    z = (f-c)*r + c
+    x = (mock_streams.defaults.x2-mock_streams.defaults.x1)*r + mock_streams.defaults.x1
+    y = (mock_streams.defaults.y2-mock_streams.defaults.y1)*r + mock_streams.defaults.y1
+    z = (mock_streams.defaults.z2-mock_streams.defaults.z1)*r + mock_streams.defaults.z1
     return x,y,z
+
 
 def acceptable_distance(r):
     return 50*r
