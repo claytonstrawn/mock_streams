@@ -1,3 +1,4 @@
+#geometry default arguments
 x1 = 0
 y1 = 0
 z1 = 0
@@ -5,8 +6,8 @@ x2 = 0
 y2 = 100
 z2 = 0
 
-#geometry default arguments
-
+stream_radius_at_Rvir = 50
+interface_thickness = 5
 
 #math default arguments
 temperature_1 = 1e4

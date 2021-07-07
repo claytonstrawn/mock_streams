@@ -43,7 +43,7 @@ def identify_phases(background_grid, geo_args):
     zs = background_grid[2]
     
     linex,liney,linez = throughline(np.linspace(0,1,30))
-    phase_types = mock_streams.distance_checks.variable_distance_check(xs,ys,zs,linex,liney,linez)
+    phase_types = mock_streams.distance_checks.variable_distance_check_2(xs,ys,zs,linex,liney,linez)
     return phase_types
 
 #math section 

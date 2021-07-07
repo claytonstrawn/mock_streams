@@ -1,4 +1,5 @@
 import numpy as np
+import mock_streams.defaults
 
 def distance_to_line(x,y,z,linex,liney,linez):
     #x is a number between 0 and 1
@@ -50,23 +51,23 @@ def throughline(r):
 
 
 def acceptable_distance(r):
-    return 50*r
+    return mock_streams.defaults.stream_radius_at_Rvir*r
 
 
 def variable_distance_check(xs,ys,zs,linex,liney,linez):
     phase_types = xs*0.0
     rs = np.sqrt(xs**2+ys**2+zs**2)
-    for i in range(len(xs)):
-        for j in range(len(xs[i])):
-            for k in range(len(xs[i,j])):
-                r = rs[i,j,k]
-                x_line,y_line,z_line = throughline(r/100)
-                distance = np.sqrt((xs[i,j,k]-x_line)**2+(ys[i,j,k]-y_line)**2+(zs[i,j,k]-z_line)**2)
-                stream_distance = acceptable_distance(r/100)
-                if distance < stream_distance:
-                    phase_types[i,j,k] = 1
-                elif stream_distance < distance < stream_distance + 5:
-                    phase_types[i,j,k] = 2
-                else:
-                    phase_types[i,j,k] = 3
+    x_line,y_line,z_line = throughline(rs/100)
+    distance = np.sqrt((xs-x_line)**2+(ys-y_line)**2+(zs-z_line)**2)
+    stream_distance = acceptable_distance(rs/100)
+    
+    stream_mask = distance<stream_distance
+    phase_types[stream_mask] = 1
+    
+    interface_mask = np.logical_and(stream_distance < distance, 
+                                    distance < stream_distance +   mock_streams.defaults.interface_thickness)
+    phase_types[interface_mask] = 2
+    
+    bulk_mask = distance > stream_distance + mock_streams.defaults.interface_thickness
+    phase_types[bulk_mask] = 3
     return phase_types
