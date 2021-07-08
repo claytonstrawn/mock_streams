@@ -3,6 +3,7 @@ import yt
 import trident
 from mock_streams import geometry
 from mock_streams import math
+from mock_streams import defaults
 #from mock_streams import yt_interface
 
 def main_function(geo_args, phys_args):
@@ -62,10 +63,10 @@ def create_fields(background_grid, phase_types, phys_args, Rvir):
     #metallicity_growth = -1 -> stream metallicity increases closer to center at Z_0 *(r/Rvir)**-1
     #temperatures = 'constant' -> keep temperature constant inside the structure
     
-    fields = []
-    fields.append(math.density_field(background_grid, phase_types, Rvir))
-    fields.append(math.temperature_field(background_grid, phase_types))
-    fields.append(math.metallicity_field(background_grid, phase_types))
+    fields = {}
+    fields['density']=math.density_field(background_grid, phase_types, Rvir)
+    fields['temperature']=math.temperature_field(background_grid, phase_types)
+    fields['metallicity']=math.metallicity_field(background_grid, phase_types)
     return fields
 
 #yt section 
