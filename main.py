@@ -122,6 +122,7 @@ def load_dataset(filename)
     data = {('gas','density'):(temp_ds.data['gas','density'])}
     bbox = np.array([[-100,100], [-100,100], [-100,100]])
     ds = yt.load_uniform_grid(data, temp_ds.data['gas','density'].shape, length_unit="kpc", bbox=bbox)
+    return ds
     
 
 def create_ion_fields(ds): #for analysis of created dataset
