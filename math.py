@@ -21,7 +21,8 @@ def density_field(background_grid, phase_types, Rvir):
     rho_0[phase_types == 2] = defaults.rho_0_2
     rho_0[phase_types == 3] = defaults.rho_0_1
     
-    density = rho_0 * (rs/Rvir)**beta
+    density[rs/Rvir > 0.1] = rho_0 * (rs/Rvir)**beta
+    density[rs/Rvir <= 0.1] = rho_0 * 0.1**beta
     return density
 
 def metallicity_field(background_grid, phase_types):
