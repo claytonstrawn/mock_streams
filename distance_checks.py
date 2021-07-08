@@ -18,28 +18,12 @@ def distance_to_line(x,y,z,linex,liney,linez):
         distances[i] = distance
     return np.amin(distances)
 
-
-def field_distance_to_line(xs,ys,zs,linex,liney,linez):
-    all_distances = xs*0.0
-    for i in range(len(xs)):
-        for j in range(len(xs[i])):
-            for k in range(len(xs[i,j])):
-                all_distances[i,j,k] = distance_to_line(xs[i,j,k],ys[i,j,k],zs[i,j,k],linex,liney,linez)
-    return all_distances
-
-
 def distance_check(xs,ys,zs,linex,liney,linez):
-    all_distances = field_distance_to_line(xs,ys,zs,linex,liney,linez)
+    all_distances = distance_to_line(xs,ys,zs,linex,liney,linez)
     phase_types = xs*0.0
-    for i in range(len(xs)):
-        for j in range(len(xs[i])):
-            for k in range(len(xs[i,j])):
-                if all_distances[i,j,k] < 30:
-                    phase_types[i,j,k] = 1
-                elif 30 < all_distances[i,j,k] < 40:
-                    phase_types[i,j,k] = 2
-                else:
-                    phase_types[i,j,k] = 3
+    phase_types[all_distances < 30] = 1
+    phase_types[np.logical_and(20<all_distances,all_distances<30)] = 2
+    phase_types[all_distances > 30] = 3
     return phase_types
 
 
