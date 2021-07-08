@@ -3,7 +3,7 @@ import yt
 import trident
 from mock_streams import geometry
 from mock_streams import math
-from mock_streams import yt_interface
+#from mock_streams import yt_interface
 
 def main_function(geo_args, phys_args):
     background_grid,Rvir = do_setup()
@@ -13,7 +13,7 @@ def main_function(geo_args, phys_args):
     ds = load_dataset(filename)
     return ds
 
-def do_setup(Rvir=100,n=50,box_size = 200):
+def do_setup(Rvir=100,n=200,box_size = 200):
     max_size = box_size/2
     x_vals = np.linspace(-max_size,max_size,n)
     y_vals = np.linspace(-max_size,max_size,n)
@@ -29,11 +29,6 @@ def do_setup(Rvir=100,n=50,box_size = 200):
 
 #geometry section 
 #code leader: Parsa
-
-#random given values for 2-3D points along the sightline
-
-#defines the x,y,and z coordinates
-
 def identify_phases(background_grid, geo_args,Rvir):
     #geo_args options:
     #stream_rotation = 0 -> no rotation
@@ -92,10 +87,10 @@ def convert_to_dataset(background_grid, fields, filename='mock.h5'): #assuming t
     
     my_data = {('data','density'): (density_with_units), ('data','temperature'): (temperature_with_units), ('data','metallicity'): (metallicity_with_units)}
     temp_ds = {}
-    yt.save_as_dataset(fake_ds, filename, my_data)
+    yt.save_as_dataset(temp_ds, filename, my_data)
     return filename
    
-def load_dataset(filename)
+def load_dataset(filename):
     temp_ds = yt.load(filename)
 
     def density(field, data):

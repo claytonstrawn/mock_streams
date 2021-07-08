@@ -1,4 +1,5 @@
 from mock_streams import defaults
+import numpy as np
 
 def temperature_field(background_grid, phase_types):
     temperature = background_grid[0] * 0.0
