@@ -4,9 +4,6 @@ import numpy as np
 x1 = 0
 y1 = 0
 z1 = 0
-x2 = 0
-y2 = 100
-z2 = 0
 
 stream_radius_at_Rvir = 50
 interface_thickness = 5
