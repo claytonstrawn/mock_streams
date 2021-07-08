@@ -95,7 +95,7 @@ def convert_to_dataset(background_grid, fields, filename='mock.h5'): #assuming t
     yt.save_as_dataset(fake_ds, filename, my_data)
     return filename
    
-def load_dataset(filename)
+def load_dataset(filename):
     temp_ds = yt.load(filename)
 
     def density(field, data):
