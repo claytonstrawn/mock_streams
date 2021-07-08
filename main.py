@@ -1,8 +1,9 @@
 import numpy as np
 import yt
 import trident
-import mock_streams.defaults
-import mock_streams.distance_checks
+from mock_streams import geometry
+from mock_streams import math
+from mock_streams import yt_interface
 
 def main_function(geo_args, phys_args):
     background_grid,Rvir = do_setup()
@@ -34,51 +35,42 @@ def do_setup(Rvir=100,n=50,box_size = 200):
 #defines the x,y,and z coordinates
 
 def identify_phases(background_grid, geo_args,Rvir):
+    #geo_args options:
+    #stream_rotation = 0 -> no rotation
+    #stream_rotation = 1 -> 1 full rotation
+    #n_streams = 1 -> only one stream
+    #n_streams = 3 -> 3 discrete streams
+    #stream_size_growth = 0 -> Rs constant with distance to center
+    #stream_size_growth = 1 -> Rs proportional to (r/Rvir)**1
+    #stream_size_growth = 2.1 -> Rs proportional to (r/Rvir)**2.1
+    #stream_width = 50 -> Rs = 50 at Rvir
+    #endpoint = 'random' -> randomize the endpoints
+    #endpoint = 'fixed' -> use the fixed default endpoints
+    #endpoint = [100,0,0] -> go to the point [100,0,0]
+
     xs = background_grid[0]
     ys = background_grid[1]
     zs = background_grid[2]
     
-    phase_types = mock_streams.distance_checks.variable_distance_check(xs,ys,zs,Rvir)
+    phase_types = geometry.variable_distance_check(xs,ys,zs,Rvir)
     return phase_types
 
 #math section 
 #code leader: Jewon
-
-def temperature_field(background_grid, phase_types):
-    temperature = background_grid[0] * 0.0
-    temperature[phase_types == 1] = mock_streams.defaults.temperature_1
-    temperature[phase_types == 2] = mock_streams.defaults.temperature_2
-    temperature[phase_types == 3] = mock_streams.defaults.temperature_3
-    return temperature
-
-def density_field(background_grid, phase_types, Rvir):
-    xs = background_grid[0]
-    ys = background_grid[1]
-    zs = background_grid[2]
-
-    rho_0 = xs * 0.0
-    rs = np.sqrt(xs**2+ys**2+zs**2)
-    beta = mock_streams.defaults.beta
-
-    rho_0[phase_types == 1] = mock_streams.defaults.rho_0_1
-    rho_0[phase_types == 2] = mock_streams.defaults.rho_0_2
-    rho_0[phase_types == 3] = mock_streams.defaults.rho_0_1
-    
-    density = rho_0 * (rs/Rvir)**beta
-    return density
-
-def metallicity_field(background_grid, phase_types):
-    metallicity = background_grid[0] * 0.0
-    metallicity[phase_types == 1] = mock_streams.defaults.metallicity_1
-    metallicity[phase_types == 2] = mock_streams.defaults.metallicity_2
-    metallicity[phase_types == 3] = mock_streams.defaults.metallicity_3
-    return metallicity
-
 def create_fields(background_grid, phase_types, phys_args, Rvir):
+    #phys_args options:
+    #density_contrast = 1 -> no difference b/w stream and bulk, rho_s/rho_b = 1
+    #density_contrast = 10 -> rho_s/rho_b = 10
+    #beta = -1.5 -> all three components follow same powerlaw of rho_0 * (r/Rvir)**-1.5
+    #beta = (-1.5,-2.5) -> stream,bulk follow different powerlaws of rho_0 * (r/Rvir)**-1.5 and -2.5, respectively
+    #metallicity_growth = 0 -> stream, bulk, interface all constant metallicity from defaults
+    #metallicity_growth = -1 -> stream metallicity increases closer to center at Z_0 *(r/Rvir)**-1
+    #temperatures = 'constant' -> keep temperature constant inside the structure
+    
     fields = []
-    fields.append(density_field(background_grid, phase_types, Rvir))
-    fields.append(temperature_field(background_grid, phase_types))
-    fields.append(metallicity_field(background_grid, phase_types))
+    fields.append(math.density_field(background_grid, phase_types, Rvir))
+    fields.append(math.temperature_field(background_grid, phase_types))
+    fields.append(math.metallicity_field(background_grid, phase_types))
     return fields
 
 #yt section 
