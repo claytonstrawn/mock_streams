@@ -8,7 +8,8 @@ def main_function(geo_args, phys_args):
     background_grid,Rvir = do_setup()
     phase_grid = identify_phases(background_grid, geo_args,Rvir)
     fields = create_fields(background_grid, phase_grid, phys_args, Rvir)
-    ds = convert_to_dataset(background_grid, fields)
+    filename = convert_to_dataset(background_grid, fields)
+    ds = load_dataset(filename)
     return ds
 
 def do_setup(Rvir=100,n=50,box_size = 200):
@@ -82,7 +83,7 @@ def create_fields(background_grid, phase_types, phys_args, Rvir):
 
 #yt section 
 #code leader: Vayun
-def convert_to_dataset(background_grid, fields, filename): #assuming that the 'fields' parameter has fields ordered with the following: densities, temperatures, metallicities.
+def convert_to_dataset(background_grid, fields, filename='mock.h5'): #assuming that the 'fields' parameter has fields ordered with the following: densities, temperatures, metallicities.
     xs = background_grid[0]
     ys = background_grid[1]
     zs = background_grid[2]
