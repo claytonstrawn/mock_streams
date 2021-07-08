@@ -52,40 +52,6 @@ def identify_phases(background_grid, geo_args,Rvir):
 
 #math section 
 #code leader: Jewon
-def temperature_field(background_grid, phase_types):
-    temperature = background_grid[0] * 0.0
-    temperature[phase_types == 1] = mock_streams.defaults.temperature_1
-    temperature[phase_types == 2] = mock_streams.defaults.temperature_2
-    temperature[phase_types == 3] = mock_streams.defaults.temperature_3
-    return temperature
-
-def density_field(background_grid, phase_types, Rvir):
-    xs = background_grid[0]
-    ys = background_grid[1]
-    zs = background_grid[2]
-
-    rho_0 = xs * 0.0
-    rs = np.sqrt(xs**2+ys**2+zs**2)
-    beta = mock_streams.defaults.beta
-
-    rho_0[phase_types == 1] = mock_streams.defaults.rho_0_1
-    rho_0[phase_types == 2] = mock_streams.defaults.rho_0_2
-    rho_0[phase_types == 3] = mock_streams.defaults.rho_0_1
-    
-    density[rs/Rvir > 0.1] = rho_0 * (rs/Rvir)**beta
-    density[rs/Rvir <= 0.1] = rho_0 * 0.1**beta
-    return density
-
-def metallicity_field(background_grid, phase_types):
-    metallicity = background_grid[0] * 0.0
-    metallicity[phase_types == 1] = mock_streams.defaults.metallicity_1
-    metallicity[phase_types == 2] = mock_streams.defaults.metallicity_2
-    metallicity[phase_types == 3] = mock_streams.defaults.metallicity_3
-    return metallicity
-
-def pressure_field(background_grid, phase_types):
-    pass
-
 def create_fields(background_grid, phase_types, phys_args, Rvir):
     #phys_args options:
     #density_contrast = 1 -> no difference b/w stream and bulk, rho_s/rho_b = 1
