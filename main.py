@@ -82,15 +82,47 @@ def create_fields(background_grid, phase_types, phys_args, Rvir):
 
 #yt section 
 #code leader: Vayun
-def convert_to_dataset(background_grid, fields): #assuming that the 'fields' parameter has fields ordered with the following: densities, temperatures, metallicities.
+def convert_to_dataset(background_grid, fields, filename): #assuming that the 'fields' parameter has fields ordered with the following: densities, temperatures, metallicities.
     xs = background_grid[0]
     ys = background_grid[1]
     zs = background_grid[2]
-
+    
+    #will probably make a dictionary
+    
     data = {('gas','density'):(fields[0], 'g*cm**(-3)'),('gas','temperature'):(fields[1],'K'),('gas','metallicity'):(fields[2],'Zsun')}
     bbox = np.array([[np.amin(xs),np.amax(xs)],[np.amin(ys),np.amax(ys),],[np.amin(zs),np.amax(zs),]])
     ds = yt.load_uniform_grid(data, fields[0].shape, length_unit="kpc", bbox=bbox)
-    return ds
+    
+    density_with_units = yt.YTArray(fields[0], 'g*cm**(-3)')
+    temperature_with_units = yt.YTArray(fields[1], 'K')
+    metallicity_with_units = yt.YTArray(fields[2], 'Zsun')
+    
+    my_data = {('data','density'): (density_with_units), ('data','temperature'): (temperature_with_units), ('data','metallicity'): (metallicity_with_units)}
+    temp_ds = {}
+    yt.save_as_dataset(fake_ds, filename, my_data)
+    return filename
+   
+def load_dataset(filename)
+    temp_ds = yt.load(filename)
+
+    def density(field, data):
+        return (data['data','density'])
+
+    def temperature(field, data):
+        return (data['data','temperature'])
+
+    def metallicity(field, data):
+        return (data['data','density'])
+
+    temp_ds.add_field(("gas", "density"), function=density, sampling_type="local", units='g/cm**3')
+    temp_ds.add_field(("gas", "density"), function=temperature, sampling_type="local", units='K')
+    temp_ds.add_field(("gas", "density"), function=metallicity, sampling_type="local", units='Zsun')
+
+
+    data = {('gas','density'):(temp_ds.data['gas','density'])}
+    bbox = np.array([[-100,100], [-100,100], [-100,100]])
+    ds = yt.load_uniform_grid(data, temp_ds.data['gas','density'].shape, length_unit="kpc", bbox=bbox)
+    
 
 def create_ion_fields(ds): #for analysis of created dataset
     trident.add_ion_fields(ds, ions=['O VI'], ftype="gas")
