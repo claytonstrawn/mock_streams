@@ -14,15 +14,16 @@ def density_field(background_grid, phase_types, Rvir):
     zs = background_grid[2]
 
     rho_0 = xs * 0.0
+    density = xs * 0.0
     rs = np.sqrt(xs**2+ys**2+zs**2)
     beta = defaults.beta
 
     rho_0[phase_types == 1] = defaults.rho_0_1
     rho_0[phase_types == 2] = defaults.rho_0_2
-    rho_0[phase_types == 3] = defaults.rho_0_1
+    rho_0[phase_types == 3] = defaults.rho_0_3
     
-    density[rs/Rvir > 0.1] = rho_0 * (rs/Rvir)**beta
-    density[rs/Rvir <= 0.1] = rho_0 * 0.1**beta
+    density[rs/Rvir > 0.1] = rho_0[rs/Rvir > 0.1] * (rs[rs/Rvir > 0.1]/Rvir)**beta
+    density[rs/Rvir <= 0.1] = rho_0[rs/Rvir <= 0.1] * 0.1**beta
     return density
 
 def metallicity_field(background_grid, phase_types):

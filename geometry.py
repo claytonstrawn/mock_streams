@@ -1,12 +1,14 @@
 import numpy as np
 from mock_streams import defaults
+from mock_streams.defaults import lookup
 
 def distance_to_line(x,y,z,linex,liney,linez):
     #x is a number between 0 and 1
     #y is a number between 0 and 1
     #z is a number between 0 and 1
     #linex,liney,linez are arrays outputed from throughline
-    distances = np.zeros(len(linex))
+    shape = len(linex),x.shape[0],x.shape[1],x.shape[2]
+    distances = np.zeros(shape)
     for i in range(len(linex)):
         xpos = linex[i]
         ypos = liney[i]
@@ -14,48 +16,87 @@ def distance_to_line(x,y,z,linex,liney,linez):
         dx = (xpos-x)**2
         dy = (ypos-y)**2
         dz = (zpos-z)**2
-        distance = np.sqrt(dx+dy+dz)
-        distances[i] = distance
-    return np.amin(distances)
+        distances[i] = np.sqrt(dx+dy+dz)
+    return np.amin(distances,axis=0)
 
-def distance_check(xs,ys,zs,linex,liney,linez):
+def min_distance_check(xs,ys,zs,throughline,geo_args,Rvir,n_line_points = 30):
+    stream_width = lookup('stream_width',geo_args)
+    endpoint = lookup('endpoint',geo_args)
+    interface_thickness = lookup('interface_thickness',geo_args)
+    
+    linex,liney,linez = throughline(endpoint,Rvir)(np.linspace(0,1,n_line_points))
     all_distances = distance_to_line(xs,ys,zs,linex,liney,linez)
     phase_types = xs*0.0
-    phase_types[all_distances < 30] = 1
-    phase_types[np.logical_and(20<all_distances,all_distances<30)] = 2
-    phase_types[all_distances > 30] = 3
+    phase_types[all_distances < stream_width] = 1
+    phase_types[np.logical_and(stream_width<all_distances,all_distances<stream_width+interface_thickness)] = 2
+    phase_types[all_distances > stream_width+interface_thickness] = 3
     return phase_types
 
 
-def throughline(r,Rvir):
-    theta = np.random.random()*2*np.pi
-    x2 = Rvir*np.cos(theta)
-    y2 = Rvir*np.cos(theta)
-    z2 = 0
-    x = (x2-defaults.x1)*r + defaults.x1
-    y = (y2-defaults.y1)*r + defaults.y1
-    z = (z2-defaults.z1)*r + defaults.z1
-    return x,y,z
+def straight_throughline(endpoint,Rvir):
+    if endpoint == 'random':
+        theta = np.random.random()*2*np.pi
+        x2 = Rvir*np.cos(theta)
+        y2 = Rvir*np.sin(theta)
+        z2 = 0
+    else:
+        x2,y2,z2 = endpoint
+    def straight_throughline_helper(r):
+        print('x',defaults.x1,x2)
+        print('y',defaults.y1,y2)
+        print('z',defaults.z1,z2)
+        x = (x2-defaults.x1)*r + defaults.x1
+        y = (y2-defaults.y1)*r + defaults.y1
+        z = (z2-defaults.z1)*r + defaults.z1
+        return x,y,z
+    return straight_throughline_helper
 
 
-def acceptable_distance(r):
-    return defaults.stream_radius_at_Rvir*r
+def acceptable_distance(stream_width):
+    def acceptable_distance_helper(r):
+        return stream_width*r
+    return acceptable_distance_helper
 
 
-def variable_distance_check(xs,ys,zs,Rvir):
+def radial_distance_check(xs,ys,zs,throughline,geo_args,Rvir):
+    stream_width = lookup('stream_width',geo_args)
+    endpoint = lookup('endpoint',geo_args)
+    interface_thickness = lookup('interface_thickness',geo_args)
     phase_types = xs*0.0
     rs = np.sqrt(xs**2+ys**2+zs**2)
-    x_line,y_line,z_line = throughline(rs/100,Rvir)
+    x_line,y_line,z_line = throughline(endpoint,Rvir)(rs/Rvir)
     distance = np.sqrt((xs-x_line)**2+(ys-y_line)**2+(zs-z_line)**2)
-    stream_distance = acceptable_distance(rs/100)
+    stream_distance = acceptable_distance(stream_width)(rs/Rvir)
     
     stream_mask = distance<stream_distance
     phase_types[stream_mask] = 1
     
     interface_mask = np.logical_and(stream_distance < distance, 
-                                    distance < stream_distance +   defaults.interface_thickness)
+                                    distance < stream_distance + defaults.interface_thickness)
     phase_types[interface_mask] = 2
     
     bulk_mask = distance > stream_distance + defaults.interface_thickness
     phase_types[bulk_mask] = 3
+    
     return phase_types
+
+
+def identify_phases(background_grid,geo_args,Rvir):
+    stream_rotation = lookup('stream_rotation',geo_args)
+    n_streams = lookup('n_streams',geo_args)
+    dist_method = lookup('dist_method',geo_args)
+
+    if stream_rotation == 0:
+        throughline = straight_throughline
+    else:
+        assert False, 'Not implemented'
+    
+    if dist_method == 'min':
+        distance_check = min_distance_check
+    elif dist_method == 'radial':
+        distance_check = radial_distance_check
+    else:
+        assert False, 'Not implemented'
+        
+    xs,ys,zs = background_grid
+    return distance_check(xs,ys,zs,throughline,geo_args,Rvir)

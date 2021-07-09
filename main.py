@@ -4,18 +4,39 @@ import trident
 from mock_streams import geometry
 from mock_streams import math
 from mock_streams import defaults
+from mock_streams.defaults import lookup
+
 #from mock_streams import yt_interface
 
-def main_function(geo_args, phys_args):
-    background_grid,Rvir = do_setup()
+possible_setup_args = ['Rvir','Mvir','n','box_size']
+possible_geo_args = ['stream_rotation','n_streams','stream_size_growth','stream_width','endpoint','dist_method']
+possible_phys_args = ['density_contrast','beta','metallicity_growth','temperatures']
+
+def main_function(setup_args=None,geo_args=None, phys_args=None,**kwargs):
+    if setup_args is None:
+        setup_args = {}
+    if geo_args is None:
+        geo_args = {}
+    if phys_args is None:
+        phys_args = {}
+    for key in kwargs.keys():
+        if key in possible_setup_args:
+            setup_args[key] = kwargs[key]
+        elif key in possible_geo_args:
+            geo_args[key] = kwargs[key]
+        elif key in possible_phys_args:
+            possible_args[key] = kwargs[key]
+    background_grid,Rvir = do_setup(setup_args)
     phase_grid = identify_phases(background_grid, geo_args,Rvir)
     fields = create_fields(background_grid, phase_grid, phys_args, Rvir)
     filename = convert_to_dataset(background_grid, fields)
     ds = load_dataset(filename)
     return ds
 
-def do_setup(Rvir=100,n=200,box_size = 200):
-    max_size = box_size/2
+
+def do_setup(setup_args):
+    max_size = lookup('box_size',setup_args)/2
+    n = lookup('n',setup_args)
     x_vals = np.linspace(-max_size,max_size,n)
     y_vals = np.linspace(-max_size,max_size,n)
     z_vals = np.linspace(-max_size,max_size,n)
@@ -24,8 +45,7 @@ def do_setup(Rvir=100,n=200,box_size = 200):
     ys = np.tile(y_vals,(n,n,1)).transpose((0,1,2))
     zs = np.tile(z_vals,(n,n,1)).transpose((1,2,0))
     
-    if not Rvir:
-        Rvir = box_size/2
+    Rvir = lookup('Rvir',setup_args)
     return (xs,ys,zs),Rvir
 
 #geometry section 
@@ -43,13 +63,7 @@ def identify_phases(background_grid, geo_args,Rvir):
     #endpoint = 'random' -> randomize the endpoints
     #endpoint = 'fixed' -> use the fixed default endpoints
     #endpoint = [100,0,0] -> go to the point [100,0,0]
-
-    xs = background_grid[0]
-    ys = background_grid[1]
-    zs = background_grid[2]
-    
-    phase_types = geometry.variable_distance_check(xs,ys,zs,Rvir)
-    return phase_types
+    return geometry.identify_phases(background_grid,geo_args,Rvir).transpose((0,2,1))
 
 #math section 
 #code leader: Jewon
@@ -78,13 +92,13 @@ def convert_to_dataset(background_grid, fields, filename='mock.h5'): #assuming t
     
     #will probably make a dictionary
     
-    data = {('gas','density'):(fields[0], 'g*cm**(-3)'),('gas','temperature'):(fields[1],'K'),('gas','metallicity'):(fields[2],'Zsun')}
-    bbox = np.array([[np.amin(xs),np.amax(xs)],[np.amin(ys),np.amax(ys),],[np.amin(zs),np.amax(zs),]])
-    ds = yt.load_uniform_grid(data, fields[0].shape, length_unit="kpc", bbox=bbox)
+    data = {('gas','density'):(fields['density'], 'g*cm**(-3)'),('gas','temperature'):(fields['temperature'],'K'),('gas','metallicity'):(fields['metallicity'],'Zsun')}
+    bbox = np.array([[np.amin(xs),np.amax(xs)],[np.amin(ys),np.amax(ys)],[np.amin(zs),np.amax(zs)]])
+    ds = yt.load_uniform_grid(data, xs.shape, length_unit="kpc", bbox=bbox)
     
-    density_with_units = yt.YTArray(fields[0], 'g*cm**(-3)')
-    temperature_with_units = yt.YTArray(fields[1], 'K')
-    metallicity_with_units = yt.YTArray(fields[2], 'Zsun')
+    density_with_units = yt.YTArray(fields['density'], 'g*cm**(-3)')
+    temperature_with_units = yt.YTArray(fields['temperature'], 'K')
+    metallicity_with_units = yt.YTArray(fields['metallicity'], 'Zsun')
     
     my_data = {('data','density'): (density_with_units), ('data','temperature'): (temperature_with_units), ('data','metallicity'): (metallicity_with_units)}
     temp_ds = {}
@@ -101,14 +115,14 @@ def load_dataset(filename):
         return (data['data','temperature'])
 
     def metallicity(field, data):
-        return (data['data','density'])
+        return (data['data','metallicity'])
 
     temp_ds.add_field(("gas", "density"), function=density, sampling_type="local", units='g/cm**3')
-    temp_ds.add_field(("gas", "density"), function=temperature, sampling_type="local", units='K')
-    temp_ds.add_field(("gas", "density"), function=metallicity, sampling_type="local", units='Zsun')
+    temp_ds.add_field(("gas", "temperature"), function=temperature, sampling_type="local", units='K')
+    temp_ds.add_field(("gas", "metallicity"), function=metallicity, sampling_type="local", units='Zsun')
 
 
-    data = {('gas','density'):(temp_ds.data['gas','density'])}
+    data = {('gas','density'):(temp_ds.data['gas','density']),('gas','temperature'):(temp_ds.data['gas','temperature']),('gas','metallicity'):(temp_ds.data['gas','metallicity'])}
     bbox = np.array([[-100,100], [-100,100], [-100,100]])
     ds = yt.load_uniform_grid(data, temp_ds.data['gas','density'].shape, length_unit="kpc", bbox=bbox)
     return ds
