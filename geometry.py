@@ -42,9 +42,6 @@ def straight_throughline(endpoint,Rvir):
     else:
         x2,y2,z2 = endpoint
     def straight_throughline_helper(r):
-        print('x',defaults.x1,x2)
-        print('y',defaults.y1,y2)
-        print('z',defaults.z1,z2)
         x = (x2-defaults.x1)*r + defaults.x1
         y = (y2-defaults.y1)*r + defaults.y1
         z = (z2-defaults.z1)*r + defaults.z1
