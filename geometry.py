@@ -1,5 +1,4 @@
 import numpy as np
-from mock_streams import defaults
 from mock_streams.defaults import lookup
 
 def distance_to_line(x,y,z,linex,liney,linez):
@@ -23,17 +22,17 @@ def min_distance_check(xs,ys,zs,throughline,geo_args,Rvir,n_line_points = 30):
     stream_width = lookup('stream_width',geo_args)
     endpoint = lookup('endpoint',geo_args)
     interface_thickness = lookup('interface_thickness',geo_args)
-    
-    linex,liney,linez = throughline(endpoint,Rvir)(np.linspace(0,1,n_line_points))
+    print(interface_thickness)
+    linex,liney,linez = throughline(startpoint,endpoint,Rvir)(np.linspace(0,1,n_line_points))
     all_distances = distance_to_line(xs,ys,zs,linex,liney,linez)
     phase_types = xs*0.0
     phase_types[all_distances < stream_width] = 1
-    phase_types[np.logical_and(stream_width<all_distances,all_distances<stream_width+interface_thickness)] = 2
-    phase_types[all_distances > stream_width+interface_thickness] = 3
+    phase_types[np.logical_and(stream_width<=all_distances,all_distances<stream_width+interface_thickness)] = 2
+    phase_types[all_distances >= stream_width+interface_thickness] = 3
     return phase_types
 
 
-def straight_throughline(endpoint,Rvir):
+def straight_throughline(startpoint,endpoint,Rvir):
     if endpoint == 'random':
         theta = np.random.random()*2*np.pi
         x2 = Rvir*np.cos(theta)
@@ -41,38 +40,41 @@ def straight_throughline(endpoint,Rvir):
         z2 = 0
     else:
         x2,y2,z2 = endpoint
+    x1,y1,z1 = startpoint
     def straight_throughline_helper(r):
-        x = (x2-defaults.x1)*r + defaults.x1
-        y = (y2-defaults.y1)*r + defaults.y1
-        z = (z2-defaults.z1)*r + defaults.z1
+        x = (x2-x1)*r + x1
+        y = (y2-y1)*r + y1
+        z = (z2-z1)*r + z1
         return x,y,z
     return straight_throughline_helper
 
 
-def acceptable_distance(stream_width):
+def acceptable_distance(stream_width,stream_size_growth):
     def acceptable_distance_helper(r):
-        return stream_width*r
+        return stream_width*r**stream_size_growth
     return acceptable_distance_helper
 
 
 def radial_distance_check(xs,ys,zs,throughline,geo_args,Rvir):
     stream_width = lookup('stream_width',geo_args)
+    startpoint = lookup('startpoint',geo_args)
     endpoint = lookup('endpoint',geo_args)
     interface_thickness = lookup('interface_thickness',geo_args)
+    stream_size_growth = lookup('stream_size_growth',geo_args)
     phase_types = xs*0.0
     rs = np.sqrt(xs**2+ys**2+zs**2)
-    x_line,y_line,z_line = throughline(endpoint,Rvir)(rs/Rvir)
+    x_line,y_line,z_line = throughline(startpoint,endpoint,Rvir)(rs/Rvir)
     distance = np.sqrt((xs-x_line)**2+(ys-y_line)**2+(zs-z_line)**2)
-    stream_distance = acceptable_distance(stream_width)(rs/Rvir)
+    stream_distance = acceptable_distance(stream_width,stream_size_growth)(rs/Rvir)
     
     stream_mask = distance<stream_distance
     phase_types[stream_mask] = 1
     
-    interface_mask = np.logical_and(stream_distance < distance, 
-                                    distance < stream_distance + defaults.interface_thickness)
+    interface_mask = np.logical_and(stream_distance <= distance, 
+                                    distance < stream_distance + interface_thickness)
     phase_types[interface_mask] = 2
     
-    bulk_mask = distance > stream_distance + defaults.interface_thickness
+    bulk_mask = distance >= stream_distance + interface_thickness
     phase_types[bulk_mask] = 3
     
     return phase_types

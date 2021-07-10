@@ -1,5 +1,6 @@
 import numpy as np
 import yt
+from unyt import mh
 import trident
 from mock_streams import geometry
 from mock_streams import math
@@ -9,8 +10,8 @@ from mock_streams.defaults import lookup
 #from mock_streams import yt_interface
 
 possible_setup_args = ['Rvir','Mvir','n','box_size']
-possible_geo_args = ['stream_rotation','n_streams','stream_size_growth','stream_width','endpoint','dist_method']
-possible_phys_args = ['density_contrast','beta','metallicity_growth','temperatures']
+possible_geo_args = ['stream_rotation','n_streams','stream_size_growth','stream_width','startpoint','endpoint','dist_method','interface_thickness']
+possible_phys_args = ['density_contrast','beta',]
 
 def main_function(setup_args=None,geo_args=None, phys_args=None,**kwargs):
     if setup_args is None:
@@ -25,7 +26,9 @@ def main_function(setup_args=None,geo_args=None, phys_args=None,**kwargs):
         elif key in possible_geo_args:
             geo_args[key] = kwargs[key]
         elif key in possible_phys_args:
-            possible_args[key] = kwargs[key]
+            phys_args[key] = kwargs[key]
+        else:
+            print('argument not recognized!')
     background_grid,Rvir = do_setup(setup_args)
     phase_grid = identify_phases(background_grid, geo_args,Rvir)
     fields = create_fields(background_grid, phase_grid, phys_args, Rvir)
@@ -78,9 +81,9 @@ def create_fields(background_grid, phase_types, phys_args, Rvir):
     #temperatures = 'constant' -> keep temperature constant inside the structure
     
     fields = {}
-    fields['density']=math.density_field(background_grid, phase_types, Rvir)
-    fields['temperature']=math.temperature_field(background_grid, phase_types)
-    fields['metallicity']=math.metallicity_field(background_grid, phase_types)
+    fields['density']=math.density_field(background_grid, phase_types, phys_args, Rvir)*mh.in_units('g')
+    fields['temperature']=math.temperature_field(background_grid, phase_types, phys_args)
+    fields['metallicity']=math.metallicity_field(background_grid, phase_types, phys_args)
     return fields
 
 #yt section 
@@ -99,8 +102,12 @@ def convert_to_dataset(background_grid, fields, filename='mock.h5'): #assuming t
     density_with_units = yt.YTArray(fields['density'], 'g*cm**(-3)')
     temperature_with_units = yt.YTArray(fields['temperature'], 'K')
     metallicity_with_units = yt.YTArray(fields['metallicity'], 'Zsun')
+    xs_with_units = yt.YTArray(xs, 'kpc')
+    ys_with_units = yt.YTArray(ys, 'kpc')
+    zs_with_units = yt.YTArray(zs, 'kpc')
     
-    my_data = {('data','density'): (density_with_units), ('data','temperature'): (temperature_with_units), ('data','metallicity'): (metallicity_with_units)}
+    my_data = {('data','density'): (density_with_units), ('data','temperature'): (temperature_with_units), ('data','metallicity'): (metallicity_with_units),('data','x'):xs_with_units,('data','y'):ys_with_units,('data','z'):zs_with_units}
+    
     temp_ds = {}
     yt.save_as_dataset(temp_ds, filename, my_data)
     return filename
@@ -123,7 +130,9 @@ def load_dataset(filename):
 
 
     data = {('gas','density'):(temp_ds.data['gas','density']),('gas','temperature'):(temp_ds.data['gas','temperature']),('gas','metallicity'):(temp_ds.data['gas','metallicity'])}
-    bbox = np.array([[-100,100], [-100,100], [-100,100]])
+    bbox = np.array([[np.amin(temp_ds.data['data','x']),np.amax(temp_ds.data['data','x'])],
+                     [np.amin(temp_ds.data['data','y']),np.amax(temp_ds.data['data','y'])],
+                     [np.amin(temp_ds.data['data','z']),np.amax(temp_ds.data['data','z'])]])
     ds = yt.load_uniform_grid(data, temp_ds.data['gas','density'].shape, length_unit="kpc", bbox=bbox)
     return ds
     
