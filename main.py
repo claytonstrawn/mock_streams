@@ -11,9 +11,13 @@ from mock_streams.defaults import lookup
 
 possible_setup_args = ['Rvir','Mvir','n','box_size']
 possible_geo_args = ['stream_rotation','n_streams','stream_size_growth','stream_width','startpoint','endpoint','dist_method','interface_thickness']
-possible_phys_args = ['density_contrast','beta','metallicity_growth','temperatures']
+possible_phys_args = ['density_contrast','beta','metallicity_growth','bulk_temperature']
 
-def main_function(setup_args=None,geo_args=None, phys_args=None,listargs = False,**kwargs):
+def main_function(**kwargs):
+    print('"main_function" is deprecated, please use "create_mock" instead. Will remove by end of week.\n')
+    return create_mock(**kwargs)
+
+def create_mock(setup_args=None,geo_args=None, phys_args=None,listargs = False,**kwargs):
     if listargs == True:
         print('Available keys are %s, %s, %s'%(possible_setup_args,possible_geo_args,possible_phys_args))
         return

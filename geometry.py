@@ -22,7 +22,6 @@ def min_distance_check(xs,ys,zs,throughline,geo_args,Rvir,n_line_points = 30):
     stream_width = lookup('stream_width',geo_args)
     endpoint = lookup('endpoint',geo_args)
     interface_thickness = lookup('interface_thickness',geo_args)
-    print(interface_thickness)
     linex,liney,linez = throughline(startpoint,endpoint,Rvir)(np.linspace(0,1,n_line_points))
     all_distances = distance_to_line(xs,ys,zs,linex,liney,linez)
     phase_types = xs*0.0

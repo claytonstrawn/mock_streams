@@ -1,0 +1,1 @@
+from mock_streams.main import create_mock
