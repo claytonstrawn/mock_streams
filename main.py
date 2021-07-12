@@ -140,7 +140,7 @@ def load_dataset(filename):
     def relative_velocity_x(field, data):
         return (data['data','relative_velocity_x'])
     
-     def relative_velocity_y(field, data):
+    def relative_velocity_y(field, data):
         return (data['data','relative_velocity_y'])
     
     def relative_velocity_z(field, data):
