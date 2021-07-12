@@ -87,6 +87,10 @@ def create_fields(background_grid, phase_types, phys_args, Rvir):
     fields['density']=math.density_field(background_grid, phase_types, phys_args, Rvir)*mh.in_units('g')
     fields['temperature']=math.temperature_field(background_grid, phase_types, phys_args)
     fields['metallicity']=math.metallicity_field(background_grid, phase_types, phys_args)
+    velocity=math.velocity_field(background_grid, phase_types, Rvir)
+    fields['relative_velocity_x']=velocity[0]
+    fields['relative_velocity_y']=velocity[1]
+    fields['relative_velocity_z']=velocity[2]
     return fields
 
 #yt section 
