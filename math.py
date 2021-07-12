@@ -1,4 +1,5 @@
 import numpy as np
+import unyt
 from mock_streams.defaults import lookup
 
 def temperature_field(background_grid, phase_types, phys_args):
@@ -66,7 +67,7 @@ def get_v(Rvir):
 
     v = np.sqrt(G*M/Rvir)
     v.convert_to_cgs()
-    return v
+    return v*unyt.s/unyt.cm
 
 def dist_to_origin(x, y, z):
     return np.sqrt(x*x + y*y + z*z)
