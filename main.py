@@ -11,9 +11,12 @@ from mock_streams.defaults import lookup
 
 possible_setup_args = ['Rvir','Mvir','n','box_size']
 possible_geo_args = ['stream_rotation','n_streams','stream_size_growth','stream_width','startpoint','endpoint','dist_method','interface_thickness']
-possible_phys_args = ['density_contrast','beta',]
+possible_phys_args = ['density_contrast','beta','metallicity_growth','temperatures']
 
-def main_function(setup_args=None,geo_args=None, phys_args=None,**kwargs):
+def main_function(setup_args=None,geo_args=None, phys_args=None,listargs = False,**kwargs):
+    if listargs == True:
+        print('Available keys are %s, %s, %s'%(possible_setup_args,possible_geo_args,possible_phys_args))
+        return
     if setup_args is None:
         setup_args = {}
     if geo_args is None:
@@ -28,7 +31,7 @@ def main_function(setup_args=None,geo_args=None, phys_args=None,**kwargs):
         elif key in possible_phys_args:
             phys_args[key] = kwargs[key]
         else:
-            print('argument not recognized!')
+            assert False,'Key "%s" not recognized! Available keys are %s, %s, %s'%(key,possible_setup_args,possible_geo_args,possible_phys_args)
     background_grid,Rvir = do_setup(setup_args)
     phase_grid = identify_phases(background_grid, geo_args,Rvir)
     fields = create_fields(background_grid, phase_grid, phys_args, Rvir)
