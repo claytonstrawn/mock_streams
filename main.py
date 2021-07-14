@@ -45,7 +45,11 @@ def create_mock(setup_args=None,geo_args=None, phys_args=None,listargs = False,w
     filename = convert_to_dataset(background_grid, fields)
     ds = load_dataset(filename)
     if write_metadata:
-        write_metadata_for_quasarscan(filename,'TEST_v1_mockstreams_01',setup_args)
+        if write_metadata is True:
+            simnum = '00'
+        else:
+            simnum = '%02d'%write_metadata
+        write_metadata_for_quasarscan(filename,'MOCK_v1_mockstreams_%s'%simnum,setup_args)
     return ds
 
 
@@ -179,7 +183,7 @@ def write_metadata_for_quasarscan(filename,fullname,setup_args,tolerance = .001)
     a = lookup('a',setup_args)
     Mvir = lookup('Mvir',setup_args)
     Rvir = lookup('Rvir',setup_args)
-    center_x, center_y, center_z = 0.5,0.5,0.5
+    center_x, center_y, center_z = 0.0,0.0,0.0
     L_x, L_y, L_z = 0,0,1
     all_lines = ["Metadata recorded on file %s with mockstreams version %s on date %s"%\
                  (filename,__version__,str(datetime.datetime.now()))]
