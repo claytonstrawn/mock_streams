@@ -6,6 +6,9 @@ from mock_streams import geometry
 from mock_streams import math
 from mock_streams import defaults
 from mock_streams.defaults import lookup
+from mock_streams import __version__
+import datetime
+import os
 
 #from mock_streams import yt_interface
 
@@ -17,7 +20,7 @@ def main_function(**kwargs):
     print('"main_function" is deprecated, please use "create_mock" instead. Will remove by end of week.\n')
     return create_mock(**kwargs)
 
-def create_mock(setup_args=None,geo_args=None, phys_args=None,listargs = False,**kwargs):
+def create_mock(setup_args=None,geo_args=None, phys_args=None,listargs = False,write_metadata = False,**kwargs):
     if listargs == True:
         print('Available keys are %s, %s, %s'%(possible_setup_args,possible_geo_args,possible_phys_args))
         return
@@ -35,12 +38,14 @@ def create_mock(setup_args=None,geo_args=None, phys_args=None,listargs = False,*
         elif key in possible_phys_args:
             phys_args[key] = kwargs[key]
         else:
-            assert False,'Key "%s" not recognized! Available keys are %s, %s, %s'%(key,possible_setup_args,possible_geo_args,possible_phys_args)
+            assert False,'Key "%s" not recognized! Available keys are %s, %s, %s'%(key, possible_setup_args, possible_geo_args, possible_phys_args)
     background_grid,Rvir = do_setup(setup_args)
     phase_grid = identify_phases(background_grid, geo_args,Rvir)
     fields = create_fields(background_grid, phase_grid, phys_args, Rvir)
     filename = convert_to_dataset(background_grid, fields)
     ds = load_dataset(filename)
+    if write_metadata:
+        write_metadata_for_quasarscan(filename,'TEST_v1_mockstreams_01',setup_args)
     return ds
 
 
@@ -92,9 +97,9 @@ def create_fields(background_grid, phase_types, phys_args, Rvir):
     fields['temperature']=math.temperature_field(background_grid, phase_types, phys_args)
     fields['metallicity']=math.metallicity_field(background_grid, phase_types, phys_args)
     velocity=math.velocity_field(background_grid, phase_types, Rvir)
-    fields['relative_velocity_x']=velocity[0]
-    fields['relative_velocity_y']=velocity[1]
-    fields['relative_velocity_z']=velocity[2]
+    fields['velocity_x']=velocity[0]
+    fields['velocity_y']=velocity[1]
+    fields['velocity_z']=velocity[2]
     return fields
 
 #yt section 
@@ -107,22 +112,22 @@ def convert_to_dataset(background_grid, fields, filename='mock.h5'): #assuming t
     #will probably make a dictionary
     
     data = {('gas','density'):(fields['density'], 'g*cm**(-3)'),('gas','temperature'):(fields['temperature'],'K'),('gas','metallicity'):(fields['metallicity'],'Zsun'), 
-            ('gas','relative_velocity_x'):(fields['relative_velocity_x'],'cm/s'), ('gas','relative_velocity_y'):(fields['relative_velocity_y'],'cm/s'), ('gas','relative_velocity_z'):(fields['relative_velocity_z'],'cm/s')}
+            ('gas','velocity_x'):(fields['velocity_x'],'cm/s'), ('gas','velocity_y'):(fields['velocity_y'],'cm/s'), ('gas','velocity_z'):(fields['velocity_z'],'cm/s')}
     bbox = np.array([[np.amin(xs),np.amax(xs)],[np.amin(ys),np.amax(ys)],[np.amin(zs),np.amax(zs)]])
     ds = yt.load_uniform_grid(data, xs.shape, length_unit="kpc", bbox=bbox)
     
     density_with_units = yt.YTArray(fields['density'], 'g*cm**(-3)')
     temperature_with_units = yt.YTArray(fields['temperature'], 'K')
     metallicity_with_units = yt.YTArray(fields['metallicity'], 'Zsun')
-    velx_with_units = yt.YTArray(fields['relative_velocity_x'], 'cm/s')
-    vely_with_units = yt.YTArray(fields['relative_velocity_y'], 'cm/s')
-    velz_with_units = yt.YTArray(fields['relative_velocity_z'], 'cm/s')
+    velx_with_units = yt.YTArray(fields['velocity_x'], 'cm/s')
+    vely_with_units = yt.YTArray(fields['velocity_y'], 'cm/s')
+    velz_with_units = yt.YTArray(fields['velocity_z'], 'cm/s')
     xs_with_units = yt.YTArray(xs, 'kpc')
     ys_with_units = yt.YTArray(ys, 'kpc')
     zs_with_units = yt.YTArray(zs, 'kpc')
     
     my_data = {('data','density'): (density_with_units), ('data','temperature'): (temperature_with_units), ('data','metallicity'): (metallicity_with_units),
-               ('data','relative_velocity_x'): (velx_with_units), ('data','relative_velocity_y'): (vely_with_units), ('data','relative_velocity_z'): (velz_with_units),
+               ('data','velocity_x'): (velx_with_units), ('data','velocity_y'): (vely_with_units), ('data','velocity_z'): (velz_with_units),
                ('data','x'):xs_with_units,('data','y'):ys_with_units,('data','z'):zs_with_units}
     
     temp_ds = {}
@@ -141,36 +146,51 @@ def load_dataset(filename):
     def metallicity(field, data):
         return (data['data','metallicity'])
     
-    def relative_velocity_x(field, data):
-        return (data['data','relative_velocity_x'])
+    def velocity_x(field, data):
+        return (data['data','velocity_x'])
     
-    def relative_velocity_y(field, data):
-        return (data['data','relative_velocity_y'])
+    def velocity_y(field, data):
+        return (data['data','velocity_y'])
     
-    def relative_velocity_z(field, data):
-        return (data['data','relative_velocity_z'])
+    def velocity_z(field, data):
+        return (data['data','velocity_z'])
 
     temp_ds.add_field(("gas", "density"), function=density, sampling_type="local", units='g/cm**3')
     temp_ds.add_field(("gas", "temperature"), function=temperature, sampling_type="local", units='K')
     temp_ds.add_field(("gas", "metallicity"), function=metallicity, sampling_type="local", units='Zsun')
-    temp_ds.add_field(("gas", "relative_velocity_x"), function=relative_velocity_x, sampling_type="local", units='cm/s')
-    temp_ds.add_field(("gas", "relative_velocity_y"), function=relative_velocity_y, sampling_type="local", units='cm/s')
-    temp_ds.add_field(("gas", "relative_velocity_z"), function=relative_velocity_z, sampling_type="local", units='cm/s')    
+    temp_ds.add_field(("gas", "velocity_x"), function=velocity_x, sampling_type="local", units='cm/s')
+    temp_ds.add_field(("gas", "velocity_y"), function=velocity_y, sampling_type="local", units='cm/s')
+    temp_ds.add_field(("gas", "velocity_z"), function=velocity_z, sampling_type="local", units='cm/s')    
 
 
     data = {('gas','density'):(temp_ds.data['gas','density']),('gas','temperature'):(temp_ds.data['gas','temperature']),('gas','metallicity'):(temp_ds.data['gas','metallicity']),
-           ('gas','relative_velocity_x'):(temp_ds.data['gas','relative_velocity_x']),('gas','relative_velocity_y'):(temp_ds.data['gas','relative_velocity_y']),
-           ('gas','relative_velocity_z'):(temp_ds.data['gas','relative_velocity_z'])}
+           ('gas','velocity_x'):(temp_ds.data['gas','velocity_x']),('gas','velocity_y'):(temp_ds.data['gas','velocity_y']),
+           ('gas','velocity_z'):(temp_ds.data['gas','velocity_z'])}
     bbox = np.array([[np.amin(temp_ds.data['data','x']),np.amax(temp_ds.data['data','x'])],
                      [np.amin(temp_ds.data['data','y']),np.amax(temp_ds.data['data','y'])],
                      [np.amin(temp_ds.data['data','z']),np.amax(temp_ds.data['data','z'])]])
     ds = yt.load_uniform_grid(data, temp_ds.data['gas','density'].shape, length_unit="kpc", bbox=bbox)
     return ds
-    
 
-def create_ion_fields(ds): #for analysis of created dataset
-    trident.add_ion_fields(ds, ions=['O VI'], ftype="gas")
-    yt.ProjectionPlot(ds, 0, "O_p5_ion_fraction")
-    yt.ProjectionPlot(ds, 0, "O_p5_number_density")
-    yt.ProjectionPlot(ds, 0, "O_p5_density")
-    yt.ProjectionPlot(ds, 0, "O_p5_mass")
+def write_metadata_for_quasarscan(filename,fullname,setup_args,tolerance = .001):    
+    pathname = os.path.expanduser('~/quasarscan_data/galaxy_catalogs/%s'%fullname)
+    if not os.path.exists(pathname):
+        os.mkdir(pathname)
+    a = lookup('a',setup_args)
+    Mvir = lookup('Mvir',setup_args)
+    Rvir = lookup('Rvir',setup_args)
+    center_x, center_y, center_z = 0.5,0.5,0.5
+    L_x, L_y, L_z = 0,0,1
+    all_lines = ["Metadata recorded on file %s with mockstreams version %s on date %s"%\
+                 (filename,__version__,str(datetime.datetime.now()))]
+    all_lines.append(str(['a','Mvir','Rvir','center_x', 'center_y', 'center_z', 'L_x', 'L_y', 'L_z'])[1:-1].replace("'",""))
+    
+    current_line = ''
+    for quantity in ['a','Mvir','Rvir','center_x', 'center_y', 'center_z', 'L_x', 'L_y', 'L_z']:
+        to_write = eval(quantity)
+        current_line += '%s, '%to_write
+    all_lines.append(current_line[:-2])
+
+    with open(os.path.join(pathname,fullname+'_metadata.txt'),'w') as f:
+        for line in all_lines:
+            f.write(line+'\n')

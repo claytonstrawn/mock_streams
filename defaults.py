@@ -10,6 +10,7 @@ def lookup(var,dictionary):
 
 Rvir = 100 #kpc
 Mvir = 1e12 #Msun
+a = 1.0 #expansion_parameter
 n = 200 #cells across in each direction
 box_size = 200 #kpc, diameter in each dimension
 
