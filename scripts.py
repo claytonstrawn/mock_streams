@@ -4,42 +4,29 @@ import trident
 import os
 from datetime import datetime
 
-def create_number_density_plots(ds):
-    #filename with date/time creation to put plots in
-    now = datetime.now()
-    datestr = now.strftime("%m.%d.%Y %H:%M:%S")
-    path = 'savedplots ' + datestr
+def create_number_density_plots(ds, ions, dimension = 2):
+    path = 'savedplots ' + datetime.now().strftime(' %m.%d.%Y %H:%M:%S')
     pathsave = path + '/'
     print(path)
     if not os.path.exists(path):
         os.makedirs(path)
         
-    trident.add_ion_fields(ds, ions=['O VI', 'H I', 'NE VIII', 'C IV'], ftype="gas")
+    trident.add_ion_fields(ds, ions=ions, ftype="gas")
     
-    yt.SlicePlot(ds, 'x', 'O_p5_number_density').save(pathsave)
-    yt.SlicePlot(ds, 'y', 'O_p5_number_density').save(pathsave)
-    yt.SlicePlot(ds, 'z', 'O_p5_number_density').save(pathsave)
-    yt.ProjectionPlot(ds, 'x', 'O_p5_number_density').save(pathsave)
-    yt.ProjectionPlot(ds, 'y', 'O_p5_number_density').save(pathsave)
-    yt.ProjectionPlot(ds, 'z', 'O_p5_number_density').save(pathsave)
-
-    yt.SlicePlot(ds, 'x', 'H_p0_number_density').save(pathsave)
-    yt.SlicePlot(ds, 'y', 'H_p0_number_density').save(pathsave)
-    yt.SlicePlot(ds, 'z', 'H_p0_number_density').save(pathsave)
-    yt.ProjectionPlot(ds, 'x', 'H_p0_number_density').save(pathsave)
-    yt.ProjectionPlot(ds, 'y', 'H_p0_number_density').save(pathsave)
-    yt.ProjectionPlot(ds, 'z', 'H_p0_number_density').save(pathsave)
-
-    yt.SlicePlot(ds, 'x', 'Ne_p7_number_density').save(pathsave)
-    yt.SlicePlot(ds, 'y', 'Ne_p7_number_density').save(pathsave)
-    yt.SlicePlot(ds, 'z', 'Ne_p7_number_density').save(pathsave)
-    yt.ProjectionPlot(ds, 'x', 'Ne_p7_number_density').save(pathsave)
-    yt.ProjectionPlot(ds, 'y', 'Ne_p7_number_density').save(pathsave)
-    yt.ProjectionPlot(ds, 'z', 'Ne_p7_number_density').save(pathsave)
-
-    yt.SlicePlot(ds, 'x', 'C_p3_number_density').save(pathsave)
-    yt.SlicePlot(ds, 'y', 'C_p3_number_density').save(pathsave)
-    yt.SlicePlot(ds, 'z', 'C_p3_number_density').save(pathsave)
-    yt.ProjectionPlot(ds, 'x', 'C_p3_number_density').save(pathsave)
-    yt.ProjectionPlot(ds, 'y', 'C_p3_number_density').save(pathsave)
-    yt.ProjectionPlot(ds, 'z', 'C_p3_number_density').save(pathsave)
+    roman_values = (('I',1), ('IV',4), ('V',5), ('IX',9),('X',10),('XL',40),('L',50),('XC',90),('C',100),
+                    ('CD', 400), ('D', 500), ('CM', 900), ('M',1000))
+ 
+    def roman_value(roman):
+        total=0
+        for symbol,value in reversed(roman_values):
+            while roman.startswith(symbol):
+                total += value
+                roman = roman[len(symbol):]
+        return total
+    
+    
+    for ion in ions:
+        yt.SlicePlot(ds, dimension, ion.split(' ')[0] + '_p' + str(roman_value(ion.split(' ')[1])-1) +
+                     '_number_density').save(pathsave)
+        yt.ProjectionPlot(ds, dimension, ion.split(' ')[0] + '_p' + str(roman_value(ion.split(' ')[1])-1) +
+                     '_number_density').save(pathsave)
