@@ -47,13 +47,13 @@ def acceptable_distance(stream_width,stream_size_growth):
         return stream_width*r**stream_size_growth
     return acceptable_distance_helper
 
-def get_multiple_endpoints(n,geo_args,Rvir,random_spread = 1.0):
+def get_multiple_endpoints(n,geo_args,Rvir,random_spread = 1.0,off_plane_spread = 1.0):
     first_endpoint = lookup('endpoint',geo_args)
     if first_endpoint == 'random':
         theta = np.random.random()*2*np.pi
         x2 = Rvir*np.cos(theta)
         y2 = Rvir*np.sin(theta)
-        z2 = 0
+        z2 = Rvir*off_plane_spread/10
         first_endpoint = x2,y2,z2
     else:
         theta = np.arctan2(first_endpoint[0],first_endpoint[1])

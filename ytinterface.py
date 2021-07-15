@@ -69,4 +69,5 @@ def load_ds(filename,redshift):
     sim_a = 1/(redshift+1)
     sim_time = 436117076640000000*sim_a
     ds = yt.load_uniform_grid(data, temp_ds.data['gas','density'].shape, length_unit="kpc", bbox=bbox,sim_time = sim_time)
+    ds.current_redshift = float(redshift)
     return ds
