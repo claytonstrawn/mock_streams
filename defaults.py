@@ -11,6 +11,7 @@ def lookup(var,dictionary):
 Rvir = 100 #kpc
 Mvir = 1e12 #Msun
 a = 1.0 #expansion_parameter
+z = 0.0 #redshift
 n = 200 #cells across in each direction
 box_size = 200 #kpc, diameter in each dimension
 
@@ -19,9 +20,9 @@ box_size = 200 #kpc, diameter in each dimension
 startpoint = [0,0,0]
 
 stream_rotation = 0
-n_streams = 1
+n_streams = 3
 stream_size_growth = 1
-stream_width = 30
+stream_width = {1:[40],2:[15,30],3:[10,15,30],4:[5,10,15,30]}
 endpoint = 'random'
 dist_method = 'radial'
 interface_thickness = 3

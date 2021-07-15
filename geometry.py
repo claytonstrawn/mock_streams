@@ -32,14 +32,8 @@ def min_distance_check(xs,ys,zs,throughline,geo_args,Rvir,n_line_points = 30):
 
 
 def straight_throughline(startpoint,endpoint,Rvir):
-    if endpoint == 'random':
-        theta = np.random.random()*2*np.pi
-        x2 = Rvir*np.cos(theta)
-        y2 = Rvir*np.sin(theta)
-        z2 = 0
-    else:
-        x2,y2,z2 = endpoint
     x1,y1,z1 = startpoint
+    x2,y2,z2 = endpoint
     def straight_throughline_helper(r):
         x = (x2-x1)*r + x1
         y = (y2-y1)*r + y1
@@ -53,27 +47,58 @@ def acceptable_distance(stream_width,stream_size_growth):
         return stream_width*r**stream_size_growth
     return acceptable_distance_helper
 
+def get_multiple_endpoints(n,geo_args,Rvir,random_spread = 1.0):
+    first_endpoint = lookup('endpoint',geo_args)
+    if first_endpoint == 'random':
+        theta = np.random.random()*2*np.pi
+        x2 = Rvir*np.cos(theta)
+        y2 = Rvir*np.sin(theta)
+        z2 = 0
+        first_endpoint = x2,y2,z2
+    else:
+        theta = np.arctan2(first_endpoint[0],first_endpoint[1])
+    endpoints = [first_endpoint]
+    angle_spread = 2*np.pi/n
+    random_dist = (np.random.random(n)-0.5)*random_spread
+    for i in range(1,n):
+        theta_i = theta+i*angle_spread+random_dist[i]
+        x2 = Rvir*np.cos(theta_i)
+        y2 = Rvir*np.sin(theta_i)
+        z2 = 0
+        next_endpoint = x2,y2,z2
+        endpoints.append(next_endpoint)
+    return endpoints
+        
 
 def radial_distance_check(xs,ys,zs,throughline,geo_args,Rvir):
-    stream_width = lookup('stream_width',geo_args)
+    n_streams = lookup('n_streams',geo_args)
+    stream_width = lookup('stream_width',geo_args)[n_streams]
     startpoint = lookup('startpoint',geo_args)
-    endpoint = lookup('endpoint',geo_args)
+    endpoints = get_multiple_endpoints(n_streams,geo_args,Rvir)
     interface_thickness = lookup('interface_thickness',geo_args)
     stream_size_growth = lookup('stream_size_growth',geo_args)
+    if n_streams > 1:
+        assert isinstance(stream_width,list) and len(stream_width) == n_streams
+        np.random.shuffle(stream_width)
+    else:
+        stream_width = [stream_width]
     phase_types = xs*0.0
     rs = np.sqrt(xs**2+ys**2+zs**2)
-    x_line,y_line,z_line = throughline(startpoint,endpoint,Rvir)(rs/Rvir)
-    distance = np.sqrt((xs-x_line)**2+(ys-y_line)**2+(zs-z_line)**2)
-    stream_distance = acceptable_distance(stream_width,stream_size_growth)(rs/Rvir)
     
-    stream_mask = distance<stream_distance
-    phase_types[stream_mask] = 1
+    for i in range(n_streams):
+        endpoint = endpoints[i]
+        x_line,y_line,z_line = throughline(startpoint,endpoint,Rvir)(rs/Rvir)
+        distance = np.sqrt((xs-x_line)**2+(ys-y_line)**2+(zs-z_line)**2)
+        stream_distance = acceptable_distance(stream_width[i],stream_size_growth)(rs/Rvir)
     
-    interface_mask = np.logical_and(stream_distance <= distance, 
+        stream_mask = distance<stream_distance
+        phase_types[stream_mask] = 1
+    
+        interface_mask = np.logical_and(stream_distance <= distance, 
                                     distance < stream_distance + interface_thickness)
-    phase_types[interface_mask] = 2
+        phase_types[interface_mask] = 2
     
-    bulk_mask = distance >= stream_distance + interface_thickness
+    bulk_mask = (phase_types==0)
     phase_types[bulk_mask] = 3
     
     return phase_types
@@ -81,7 +106,6 @@ def radial_distance_check(xs,ys,zs,throughline,geo_args,Rvir):
 
 def identify_phases(background_grid,geo_args,Rvir):
     stream_rotation = lookup('stream_rotation',geo_args)
-    n_streams = lookup('n_streams',geo_args)
     dist_method = lookup('dist_method',geo_args)
 
     if stream_rotation == 0:

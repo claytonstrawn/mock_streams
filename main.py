@@ -2,9 +2,7 @@ import numpy as np
 import yt
 from unyt import mh
 import trident
-from mock_streams import geometry
-from mock_streams import math
-from mock_streams import defaults
+from mock_streams import geometry,math,defaults,ytinterface
 from mock_streams.defaults import lookup
 from mock_streams import __version__
 import datetime
@@ -12,7 +10,7 @@ import os
 
 #from mock_streams import yt_interface
 
-possible_setup_args = ['Rvir','Mvir','n','box_size']
+possible_setup_args = ['Rvir','Mvir','n','box_size','a','z']
 possible_geo_args = ['stream_rotation','n_streams','stream_size_growth','stream_width','startpoint','endpoint','dist_method','interface_thickness']
 possible_phys_args = ['density_contrast','beta','metallicity_growth','bulk_temperature']
 
@@ -39,11 +37,11 @@ def create_mock(setup_args=None,geo_args=None, phys_args=None,listargs = False,w
             phys_args[key] = kwargs[key]
         else:
             assert False,'Key "%s" not recognized! Available keys are %s, %s, %s'%(key, possible_setup_args, possible_geo_args, possible_phys_args)
-    background_grid,Rvir = do_setup(setup_args)
+    background_grid,Rvir,redshift = do_setup(setup_args)
     phase_grid = identify_phases(background_grid, geo_args,Rvir)
     fields = create_fields(background_grid, phase_grid, phys_args, Rvir)
     filename = convert_to_dataset(background_grid, fields)
-    ds = load_dataset(filename)
+    ds = load_dataset(filename,redshift)
     if write_metadata:
         if write_metadata is True:
             simnum = '00'
@@ -65,7 +63,12 @@ def do_setup(setup_args):
     zs = np.tile(z_vals,(n,n,1)).transpose((1,2,0))
     
     Rvir = lookup('Rvir',setup_args)
-    return (xs,ys,zs),Rvir
+    a = lookup('a',setup_args)
+    if a == 1.0:
+        redshift = lookup('z',setup_args)
+    else:
+        redshift = 1./a-1.
+    return (xs,ys,zs),Rvir,redshift
 
 #geometry section 
 #code leader: Parsa
@@ -108,73 +111,12 @@ def create_fields(background_grid, phase_types, phys_args, Rvir):
 
 #yt section 
 #code leader: Vayun
-def convert_to_dataset(background_grid, fields, filename='mock.h5'): #assuming that the 'fields' parameter has fields ordered with the following: densities, temperatures, metallicities.
-    xs = background_grid[0]
-    ys = background_grid[1]
-    zs = background_grid[2]
-    
-    #will probably make a dictionary
-    
-    data = {('gas','density'):(fields['density'], 'g*cm**(-3)'),('gas','temperature'):(fields['temperature'],'K'),('gas','metallicity'):(fields['metallicity'],'Zsun'), 
-            ('gas','velocity_x'):(fields['velocity_x'],'cm/s'), ('gas','velocity_y'):(fields['velocity_y'],'cm/s'), ('gas','velocity_z'):(fields['velocity_z'],'cm/s')}
-    bbox = np.array([[np.amin(xs),np.amax(xs)],[np.amin(ys),np.amax(ys)],[np.amin(zs),np.amax(zs)]])
-    ds = yt.load_uniform_grid(data, xs.shape, length_unit="kpc", bbox=bbox)
-    
-    density_with_units = yt.YTArray(fields['density'], 'g*cm**(-3)')
-    temperature_with_units = yt.YTArray(fields['temperature'], 'K')
-    metallicity_with_units = yt.YTArray(fields['metallicity'], 'Zsun')
-    velx_with_units = yt.YTArray(fields['velocity_x'], 'cm/s')
-    vely_with_units = yt.YTArray(fields['velocity_y'], 'cm/s')
-    velz_with_units = yt.YTArray(fields['velocity_z'], 'cm/s')
-    xs_with_units = yt.YTArray(xs, 'kpc')
-    ys_with_units = yt.YTArray(ys, 'kpc')
-    zs_with_units = yt.YTArray(zs, 'kpc')
-    
-    my_data = {('data','density'): (density_with_units), ('data','temperature'): (temperature_with_units), ('data','metallicity'): (metallicity_with_units),
-               ('data','velocity_x'): (velx_with_units), ('data','velocity_y'): (vely_with_units), ('data','velocity_z'): (velz_with_units),
-               ('data','x'):xs_with_units,('data','y'):ys_with_units,('data','z'):zs_with_units}
-    
-    temp_ds = {}
-    yt.save_as_dataset(temp_ds, filename, my_data)
-    return filename
+def convert_to_dataset(background_grid, fields,filename='mock.h5'): 
+    #assuming that the 'fields' parameter has fields ordered with the following: densities, temperatures, metallicities.
+    return ytinterface.create_dataset(background_grid, fields, filename)
    
-def load_dataset(filename):
-    temp_ds = yt.load(filename)
-
-    def density(field, data):
-        return (data['data','density'])
-
-    def temperature(field, data):
-        return (data['data','temperature'])
-
-    def metallicity(field, data):
-        return (data['data','metallicity'])
-    
-    def velocity_x(field, data):
-        return (data['data','velocity_x'])
-    
-    def velocity_y(field, data):
-        return (data['data','velocity_y'])
-    
-    def velocity_z(field, data):
-        return (data['data','velocity_z'])
-
-    temp_ds.add_field(("gas", "density"), function=density, sampling_type="local", units='g/cm**3')
-    temp_ds.add_field(("gas", "temperature"), function=temperature, sampling_type="local", units='K')
-    temp_ds.add_field(("gas", "metallicity"), function=metallicity, sampling_type="local", units='Zsun')
-    temp_ds.add_field(("gas", "velocity_x"), function=velocity_x, sampling_type="local", units='cm/s')
-    temp_ds.add_field(("gas", "velocity_y"), function=velocity_y, sampling_type="local", units='cm/s')
-    temp_ds.add_field(("gas", "velocity_z"), function=velocity_z, sampling_type="local", units='cm/s')    
-
-
-    data = {('gas','density'):(temp_ds.data['gas','density']),('gas','temperature'):(temp_ds.data['gas','temperature']),('gas','metallicity'):(temp_ds.data['gas','metallicity']),
-           ('gas','velocity_x'):(temp_ds.data['gas','velocity_x']),('gas','velocity_y'):(temp_ds.data['gas','velocity_y']),
-           ('gas','velocity_z'):(temp_ds.data['gas','velocity_z'])}
-    bbox = np.array([[np.amin(temp_ds.data['data','x']),np.amax(temp_ds.data['data','x'])],
-                     [np.amin(temp_ds.data['data','y']),np.amax(temp_ds.data['data','y'])],
-                     [np.amin(temp_ds.data['data','z']),np.amax(temp_ds.data['data','z'])]])
-    ds = yt.load_uniform_grid(data, temp_ds.data['gas','density'].shape, length_unit="kpc", bbox=bbox)
-    return ds
+def load_dataset(filename,redshift):
+    return ytinterface.load_ds(filename,redshift)
 
 def write_metadata_for_quasarscan(filename,fullname,setup_args,tolerance = .001):    
     pathname = os.path.expanduser('~/quasarscan_data/galaxy_catalogs/%s'%fullname)

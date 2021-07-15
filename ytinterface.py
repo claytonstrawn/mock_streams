@@ -1,13 +1,8 @@
 import numpy as np
 import yt
 from unyt import mh
-import trident
-from mock_streams import geometry
-from mock_streams import math
-from mock_streams import defaults
-from mock_streams.defaults import lookup
 
-def create_dataset(background_grid, fields, filename='mock.h5'): #assuming that the 'fields' parameter has fields ordered with the following: densities, temperatures, metallicities.
+def create_dataset(background_grid, fields, filename): #assuming that the 'fields' parameter has fields ordered with the following: densities, temperatures, metallicities.
     xs = background_grid[0]
     ys = background_grid[1]
     zs = background_grid[2]
@@ -33,8 +28,10 @@ def create_dataset(background_grid, fields, filename='mock.h5'): #assuming that 
     
     temp_ds = {}
     yt.save_as_dataset(temp_ds, filename, my_data)
+    return filename
     
-def load_ds(filename):
+def load_ds(filename,redshift):
+    print(filename)
     temp_ds = yt.load(filename)
 
     def density(field, data):
@@ -69,5 +66,7 @@ def load_ds(filename):
     bbox = np.array([[np.amin(temp_ds.data['data','x']),np.amax(temp_ds.data['data','x'])],
                      [np.amin(temp_ds.data['data','y']),np.amax(temp_ds.data['data','y'])],
                      [np.amin(temp_ds.data['data','z']),np.amax(temp_ds.data['data','z'])]])
-    ds = yt.load_uniform_grid(data, temp_ds.data['gas','density'].shape, length_unit="kpc", bbox=bbox)
+    sim_a = 1/(redshift+1)
+    sim_time = 436117076640000000*sim_a
+    ds = yt.load_uniform_grid(data, temp_ds.data['gas','density'].shape, length_unit="kpc", bbox=bbox,sim_time = sim_time)
     return ds
