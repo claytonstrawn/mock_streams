@@ -57,19 +57,19 @@ def velocity_field(background_grid, phase_types, Rvir):
     ys = background_grid[1]
     zs = background_grid[2]
 
-    relative_velocity_x = xs*0.0
-    relative_velocity_y = xs*0.0
-    relative_velocity_z = xs*0.0
+    velocity_x = xs*0.0
+    velocity_y = xs*0.0
+    velocity_z = xs*0.0
 
-    relative_velocity_x = x_velocity(xs, ys, zs, Rvir)
-    relative_velocity_y = y_velocity(xs, ys, zs, Rvir)
-    relative_velocity_z = z_velocity(xs, ys, zs, Rvir)
+    velocity_x = x_velocity(xs, ys, zs, Rvir)
+    velocity_y = y_velocity(xs, ys, zs, Rvir)
+    velocity_z = z_velocity(xs, ys, zs, Rvir)
 
-    relative_velocity_x[phase_types > 1] = 0
-    relative_velocity_y[phase_types > 1] = 0
-    relative_velocity_z[phase_types > 1] = 0
+    velocity_x[phase_types > 1] = 0
+    velocity_y[phase_types > 1] = 0
+    velocity_z[phase_types > 1] = 0
 
-    return relative_velocity_x, relative_velocity_y, relative_velocity_z
+    return velocity_x, velocity_y, velocity_z
 
 def get_v(Rvir):
     G = unyt.G
