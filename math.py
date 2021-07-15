@@ -57,8 +57,19 @@ def velocity_field(background_grid, phase_types, Rvir):
     ys = background_grid[1]
     zs = background_grid[2]
 
-    velocity = x_velocity(xs, ys, zs, Rvir), y_velocity(xs, ys, zs, Rvir), z_velocity(xs, ys, zs, Rvir)
-    return velocity
+    relative_velocity_x = xs*0.0
+    relative_velocity_y = xs*0.0
+    relative_velocity_z = xs*0.0
+
+    relative_velocity_x = x_velocity(xs, ys, zs, Rvir)
+    relative_velocity_y = y_velocity(xs, ys, zs, Rvir)
+    relative_velocity_z = z_velocity(xs, ys, zs, Rvir)
+
+    relative_velocity_x[phase_types > 1] = 0
+    relative_velocity_y[phase_types > 1] = 0
+    relative_velocity_z[phase_types > 1] = 0
+
+    return relative_velocity_x, relative_velocity_y, relative_velocity_z
 
 def get_v(Rvir):
     G = unyt.G
@@ -75,17 +86,17 @@ def dist_to_origin(x, y, z):
 def x_velocity(x, y, z, Rvir):
     v = get_v(Rvir)
     tot = dist_to_origin(x, y, z)
-    xvel = (v/tot) * x - x
+    xvel = -(v/tot) * x
     return xvel
 
 def y_velocity(x, y, z, Rvir):
     v = get_v(Rvir)
     tot = dist_to_origin(x, y, z)
-    yvel = (v/tot) * y - y
+    yvel = -(v/tot) * y
     return yvel
 
 def z_velocity(x, y, z, Rvir):
     v = get_v(Rvir)
     tot = dist_to_origin(x, y, z)
-    zvel = (v/tot) * z - z
+    zvel = -(v/tot) * z
     return zvel
