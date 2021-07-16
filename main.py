@@ -124,6 +124,11 @@ def write_metadata_for_quasarscan(filename,fullname,setup_args,tolerance = .001)
     if not os.path.exists(pathname):
         os.mkdir(pathname)
     a = lookup('a',setup_args)
+    if a == 1.0:
+        redshift = lookup('z',setup_args)
+        a = 1./(1.+redshift)
+    else:
+        redshift = 1./a-1.
     Mvir = lookup('Mvir',setup_args)
     Rvir = lookup('Rvir',setup_args)
     center_x, center_y, center_z = 0.0,0.0,0.0
