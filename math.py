@@ -61,9 +61,9 @@ def velocity_field(background_grid, phase_types, Rvir):
     velocity_y = xs*0.0
     velocity_z = xs*0.0
 
-    velocity_x = x_velocity(xs, ys, zs, Rvir)
-    velocity_y = y_velocity(xs, ys, zs, Rvir)
-    velocity_z = z_velocity(xs, ys, zs, Rvir)
+    velocity_x = x_velocity(xs, ys, zs, Rvir).transpose((0,2,1))
+    velocity_y = y_velocity(xs, ys, zs, Rvir).transpose((0,2,1))
+    velocity_z = z_velocity(xs, ys, zs, Rvir).transpose((0,2,1))
 
     velocity_x[phase_types > 1] = 0
     velocity_y[phase_types > 1] = 0

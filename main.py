@@ -48,6 +48,7 @@ def create_mock(setup_args=None,geo_args=None, phys_args=None,listargs = False,w
         else:
             simnum = '%02d'%write_metadata
         write_metadata_for_quasarscan(filename,'MOCK_v1_mockstreams_%s'%simnum,setup_args)
+    print('loaded dataset MOCK_v1_mockstreams_%s at redshift %f'%(simnum,redshift))
     return ds
 
 

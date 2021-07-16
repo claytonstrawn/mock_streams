@@ -72,7 +72,11 @@ def get_multiple_endpoints(n,geo_args,Rvir,random_spread = 1.0,off_plane_spread 
 
 def radial_distance_check(xs,ys,zs,throughline,geo_args,Rvir):
     n_streams = lookup('n_streams',geo_args)
-    stream_width = lookup('stream_width',geo_args)[n_streams]
+    stream_width = lookup('stream_width',geo_args)
+    if isinstance(stream_width,dict):
+        stream_width = stream_width[n_streams]
+    elif not isinstance(stream_width,list) and n_streams==1:
+        stream_width = [stream_width]
     startpoint = lookup('startpoint',geo_args)
     endpoints = get_multiple_endpoints(n_streams,geo_args,Rvir)
     interface_thickness = lookup('interface_thickness',geo_args)
