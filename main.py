@@ -10,7 +10,7 @@ import os
 
 #from mock_streams import yt_interface
 
-possible_setup_args = ['Rvir','Mvir','n','box_size','a','z']
+possible_setup_args = ['Rvir','Mvir','n','box_size','a','z','filename']
 possible_geo_args = ['stream_rotation','n_streams','stream_size_growth','stream_width','startpoint','endpoint','dist_method','interface_thickness']
 possible_phys_args = ['density_contrast','beta','metallicity_growth','bulk_temperature']
 
@@ -40,7 +40,7 @@ def create_mock(setup_args=None,geo_args=None, phys_args=None,listargs = False,w
     background_grid,Rvir,redshift = do_setup(setup_args)
     phase_grid = identify_phases(background_grid, geo_args,Rvir)
     fields = create_fields(background_grid, phase_grid, phys_args, Rvir)
-    filename = convert_to_dataset(background_grid, fields)
+    filename = convert_to_dataset(background_grid, fields, setup_args)
     ds = load_dataset(filename,redshift)
     if write_metadata:
         if write_metadata is True:
@@ -48,7 +48,7 @@ def create_mock(setup_args=None,geo_args=None, phys_args=None,listargs = False,w
         else:
             simnum = '%02d'%write_metadata
         write_metadata_for_quasarscan(filename,'MOCK_v1_mockstreams_%s'%simnum,setup_args)
-    print('loaded dataset MOCK_v1_mockstreams_%s at redshift %f'%(simnum,redshift))
+        print('loaded dataset MOCK_v1_mockstreams_%s at redshift %f'%(simnum,redshift))
     return ds
 
 
@@ -112,7 +112,8 @@ def create_fields(background_grid, phase_types, phys_args, Rvir):
 
 #yt section 
 #code leader: Vayun
-def convert_to_dataset(background_grid, fields,filename='mock.h5'): 
+def convert_to_dataset(background_grid, fields,setup_args): 
+    filename = lookup('filename',setup_args)
     #assuming that the 'fields' parameter has fields ordered with the following: densities, temperatures, metallicities.
     return ytinterface.create_dataset(background_grid, fields, filename)
    

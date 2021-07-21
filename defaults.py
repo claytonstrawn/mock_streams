@@ -14,12 +14,13 @@ a = 1.0 #expansion_parameter
 z = 0.0 #redshift
 n = 200 #cells across in each direction
 box_size = 200 #kpc, diameter in each dimension
+filename = 'mock.h5'
 
 #geometry default arguments
 
 startpoint = [0,0,0]
 
-stream_rotation = 0
+stream_rotation = 0.0
 n_streams = 3
 stream_size_growth = 1
 stream_width = {1:[40],2:[15,30],3:[10,15,30],4:[5,10,15,30]}
