@@ -143,10 +143,7 @@ def slab_distance_check(xs,ys,zs,throughline,geo_args,Rvir,b,n_t = 60):
         p = throughline((0,0,0),endpoints[i],Rvir,b)(ts)
         Rs = acceptable_distance(stream_width[i],stream_size_growth)(ts)
         for j in range(len(ts)-2):
-            p1 = p[:,j]
-            R1 = Rs[j]
-            p2 = p[:,j+2]
-            R2 = Rs[j+2]
+            p1,p2,R1,R2 = p[:,j],p[:,j+2],Rs[j],Rs[j+2]
             w = np.linalg.norm(p2-p1)
             A,B,C = (p2-p1)/w
             x0,y0,z0 = (p1+p2)/2
@@ -162,7 +159,8 @@ def slab_distance_check(xs,ys,zs,throughline,geo_args,Rvir,b,n_t = 60):
             interface = np.logical_and(h>=R,h<R+interface_thickness)
             phase_types.flat[np.flatnonzero(slab)[stream]] = 1
             phase_types.flat[np.flatnonzero(slab)[interface]] = 2
-    phase_types[phase_types==0] = 3
+    bulk = (phase_types==0)
+    phase_types[bulk] = 3
     return phase_types
 
 

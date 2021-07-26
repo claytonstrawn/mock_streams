@@ -14,10 +14,6 @@ possible_setup_args = ['Rvir','Mvir','n','box_size','a','z','filename']
 possible_geo_args = ['stream_rotation','n_streams','stream_size_growth','stream_width','startpoint','endpoint','dist_method','interface_thickness']
 possible_phys_args = ['density_contrast','beta','metallicity_growth','bulk_temperature']
 
-def main_function(**kwargs):
-    print('"main_function" is deprecated, please use "create_mock" instead. Will remove by end of week.\n')
-    return create_mock(**kwargs)
-
 def create_mock(setup_args=None,geo_args=None, phys_args=None,listargs = False,write_metadata = False,**kwargs):
     if listargs == True:
         print('Available keys are %s, %s, %s'%(possible_setup_args,possible_geo_args,possible_phys_args))
@@ -51,6 +47,8 @@ def create_mock(setup_args=None,geo_args=None, phys_args=None,listargs = False,w
         print('loaded dataset MOCK_v1_mockstreams_%s at redshift %f'%(simnum,redshift))
     return ds
 
+def turn_off_yt_comments():
+    yt.funcs.mylog.setLevel(50)
 
 def do_setup(setup_args):
     max_size = lookup('box_size',setup_args)/2
