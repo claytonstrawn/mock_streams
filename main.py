@@ -141,7 +141,10 @@ def write_metadata_for_quasarscan(filename,fullname,setup_args,tolerance = .001)
         to_write = eval(quantity)
         current_line += '%s, '%to_write
     all_lines.append(current_line[:-2])
-
+    
+    if os.path.exists(os.path.join(pathname,fullname+'_metadata.txt')):
+        print('warning: overriding existing metadata file! Old quasarspheres at different redshifts will not be read correctly.')
+    
     with open(os.path.join(pathname,fullname+'_metadata.txt'),'w') as f:
         for line in all_lines:
             f.write(line+'\n')
