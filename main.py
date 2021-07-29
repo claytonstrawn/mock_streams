@@ -114,18 +114,22 @@ def write_metadata_for_quasarscan(filename,fullname,model):
     L_x, L_y, L_z = 0,0,1
     all_lines = ["Metadata recorded on file %s with mockstreams version %s on date %s"%\
                  (filename,__version__,str(datetime.datetime.now()))]
-    all_lines.append(str(['a','Mvir','Rvir','center_x', 'center_y', 'center_z', 'L_x', 'L_y', 'L_z'])[1:-1].replace("'",""))
-    
+    headers = ['a','Rvir','center_x', 'center_y', 'center_z', 'L_x', 'L_y', 'L_z']
+    for quantity in model.keys():
+        model_type = type(model[quantity])
+        if model_type not in [str,int,float]:
+            continue
+        if quantity not in headers:
+            headers.append(quantity)
+    all_lines.append(str(headers)[1:-1].replace("'",""))
     current_line = ''
-    required_quantities = ['a','Mvir','Rvir','center_x', 'center_y', 'center_z', 'L_x', 'L_y', 'L_z']
-    for quantity in required_quantities:
-        to_write = eval(quantity)
+    for quantity in headers:
+        try:
+            to_write = eval(quantity)
+        except:
+            to_write = model[quantity]
         current_line += '%s, '%to_write
-    #for quantity in set(model.keys())-set(required_quantities):
-    #    to_write = model[quantity]
-    #    current_line += '%s, '%to_write
     all_lines.append(current_line[:-2])
-    
     if os.path.exists(os.path.join(pathname,fullname+'_metadata.txt')):
         print('warning: overriding existing metadata file! Old quasarspheres at different redshifts will not be read correctly.')
     

@@ -117,6 +117,7 @@ def radial_distance_check(xs,ys,zs,throughline,model):
         assert len(stream_width) == n_streams
     startpoint = model['startpoint']
     endpoints = get_multiple_endpoints(model)
+    model['endpoint'] = endpoints
     interface_thickness = model['interface_thickness']
     stream_size_growth = model['stream_size_growth']
     if n_streams > 1:
