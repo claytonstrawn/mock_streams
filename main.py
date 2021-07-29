@@ -3,7 +3,6 @@ import yt
 from unyt import mh
 import trident
 from mock_streams import geometry,math,defaults,ytinterface,model_setup
-from mock_streams.defaults import lookup
 from mock_streams import __version__
 import datetime
 import os
@@ -118,13 +117,13 @@ def write_metadata_for_quasarscan(filename,fullname,model):
     all_lines.append(str(['a','Mvir','Rvir','center_x', 'center_y', 'center_z', 'L_x', 'L_y', 'L_z'])[1:-1].replace("'",""))
     
     current_line = ''
-    required_quantities = ['a','Rvir','center_x', 'center_y', 'center_z', 'L_x', 'L_y', 'L_z']
+    required_quantities = ['a','Mvir','Rvir','center_x', 'center_y', 'center_z', 'L_x', 'L_y', 'L_z']
     for quantity in required_quantities:
         to_write = eval(quantity)
         current_line += '%s, '%to_write
-    for quantity in set(model.keys())-set(required_quantities):
-        to_write = model[quantity]
-        current_line += '%s, '%to_write
+    #for quantity in set(model.keys())-set(required_quantities):
+    #    to_write = model[quantity]
+    #    current_line += '%s, '%to_write
     all_lines.append(current_line[:-2])
     
     if os.path.exists(os.path.join(pathname,fullname+'_metadata.txt')):

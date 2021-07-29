@@ -1,11 +1,11 @@
 import numpy as np
 from unyt import mh
 
-def lookup(var,dictionary):
-    if var in dictionary.keys():
-        return dictionary[var]
-    else:
+def lookup(var,dictionary=None):
+    if dictionary is None or var not in dictionary.keys():
         return eval(var)    
+    else:
+        return dictionary[var]
     
 
 Rvir = 100 #kpc
@@ -30,7 +30,7 @@ bulk_density = 10**-4 #cm-3
 stream_metallicity = 10**-0.05 #Zsun
 interface_metallicity = 10**0.03 #Zsun
 bulk_metallicity = 10**0.23 #Zsun
-beta = 1.47 #from simulations
+beta = 1.5 #from simulations
 
 s = 1.0
 eta = 1.0
