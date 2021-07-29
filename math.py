@@ -1,14 +1,9 @@
 import numpy as np
 import unyt
-from mock_streams.defaults import lookup
 
-def temperature_field(background_grid, phase_types, phys_args):
-    T3 = lookup('bulk_temperature',phys_args)
-    density_contrast = lookup('density_contrast',phys_args)
-    if density_contrast == 'separate':
-        T1 = lookup('stream_temperature',phys_args)
-    else:
-        T1 = T3/density_contrast
+def temperature_field(background_grid, phase_types, model):
+    T1 = model['stream_temperature']
+    T3 = model['bulk_temperature']
     T2 = np.sqrt(T1*T3)
 
     temperature = background_grid[0] * 0.0
@@ -17,7 +12,9 @@ def temperature_field(background_grid, phase_types, phys_args):
     temperature[phase_types == 3] = T3
     return temperature
 
-def density_field(background_grid, phase_types, phys_args, Rvir):
+def density_field(background_grid, phase_types, model):
+    Rvir = model['Rvir']
+    
     xs = background_grid[0]
     ys = background_grid[1]
     zs = background_grid[2]
@@ -25,34 +22,31 @@ def density_field(background_grid, phase_types, phys_args, Rvir):
     rho_0 = xs * 0.0
     density = xs * 0.0
     rs = np.sqrt(xs**2+ys**2+zs**2)
-    beta = lookup('beta',phys_args)
-    if beta>0:
-        print('warning! beta is intended to be negative (higher densities in center)')
+    beta = model['beta']
+    if beta<0:
+        print('warning! beta is intended to be positive (higher densities in center)')
     
-    R3 = lookup('bulk_density',phys_args)
-    density_contrast = lookup('density_contrast',phys_args)
-    if density_contrast == 'separate':
-        R1 = lookup('stream_density',phys_args)
-    else:
-        R1 = R3*density_contrast
+    R1 = model['stream_density']
+    R3 = model['bulk_density']
     R2 = np.sqrt(R1*R3)    
     
     rho_0[phase_types == 1] = R1
     rho_0[phase_types == 2] = R2
     rho_0[phase_types == 3] = R3
     
-    density[(rs/Rvir) > 0.1] = rho_0[rs/Rvir > 0.1] * (rs[rs/Rvir > 0.1]/Rvir)**beta
-    density[(rs/Rvir) <= 0.1] = rho_0[rs/Rvir <= 0.1] * 0.1**beta
+    density[(rs/Rvir) > 0.1] = rho_0[rs/Rvir > 0.1] * (rs[rs/Rvir > 0.1]/Rvir)**-beta
+    density[(rs/Rvir) <= 0.1] = rho_0[rs/Rvir <= 0.1] * 0.1**-beta
     return density
 
-def metallicity_field(background_grid, phase_types, phys_args):
+def metallicity_field(background_grid, phase_types, model):
     metallicity = background_grid[0] * 0.0
-    metallicity[phase_types == 1] = lookup('stream_metallicity',phys_args)
-    metallicity[phase_types == 2] = lookup('interface_metallicity',phys_args)
-    metallicity[phase_types == 3] = lookup('bulk_metallicity',phys_args)
+    metallicity[phase_types == 1] = model['stream_metallicity']
+    metallicity[phase_types == 2] = model['interface_metallicity']
+    metallicity[phase_types == 3] = model['bulk_metallicity']
     return metallicity
 
-def velocity_field(background_grid, phase_types, Rvir):
+def velocity_field(background_grid, phase_types,model):
+    Rvir = model['Rvir']
     xs = background_grid[0]
     ys = background_grid[1]
     zs = background_grid[2]

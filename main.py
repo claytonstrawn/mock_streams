@@ -2,57 +2,45 @@ import numpy as np
 import yt
 from unyt import mh
 import trident
-from mock_streams import geometry,math,defaults,ytinterface
+from mock_streams import geometry,math,defaults,ytinterface,model_setup
 from mock_streams.defaults import lookup
 from mock_streams import __version__
 import datetime
 import os
 
-#from mock_streams import yt_interface
-
-possible_setup_args = ['Rvir','Mvir','n','box_size','a','z','filename']
-possible_geo_args = ['stream_rotation','n_streams','stream_size_growth','stream_width','startpoint','endpoint','dist_method','interface_thickness']
-possible_phys_args = ['density_contrast','beta','metallicity_growth','bulk_temperature']
-
-def create_mock(setup_args=None,geo_args=None, phys_args=None,listargs = False,write_metadata = False,**kwargs):
-    if listargs == True:
-        print('Available keys are %s, %s, %s'%(possible_setup_args,possible_geo_args,possible_phys_args))
+def create_mock(model_name = 'round_numbers',listargs = False,write_metadata = False,\
+                filename = 'mock.h5',return_model = False,**kwargs):
+    if listargs:
+        model_setup.describe_model(model_name)
         return
-    if setup_args is None:
-        setup_args = {}
-    if geo_args is None:
-        geo_args = {}
-    if phys_args is None:
-        phys_args = {}
-    for key in kwargs.keys():
-        if key in possible_setup_args:
-            setup_args[key] = kwargs[key]
-        elif key in possible_geo_args:
-            geo_args[key] = kwargs[key]
-        elif key in possible_phys_args:
-            phys_args[key] = kwargs[key]
-        else:
-            assert False,'Key "%s" not recognized! Available keys are %s, %s, %s'%(key, possible_setup_args, possible_geo_args, possible_phys_args)
-    background_grid,Rvir,redshift = do_setup(setup_args)
-    phase_grid = identify_phases(background_grid, geo_args,Rvir)
-    fields = create_fields(background_grid, phase_grid, phys_args, Rvir)
-    filename = convert_to_dataset(background_grid, fields, setup_args)
-    ds = load_dataset(filename,redshift)
+    model = model_setup.set_up_model(kwargs,model_name)
+    background_grid = do_setup(model)
+    phase_grid = identify_phases(background_grid, model)
+    fields = create_fields(background_grid, phase_grid, model)
+    filename = convert_to_dataset(fields,filename)
+    ds = load_dataset(filename,model)
     if write_metadata:
         if write_metadata is True:
             simnum = '00'
         else:
             simnum = '%02d'%write_metadata
-        write_metadata_for_quasarscan(filename,'MOCK_v1_mockstreams_%s'%simnum,setup_args)
-        print('loaded dataset MOCK_v1_mockstreams_%s at redshift %f'%(simnum,redshift))
-    return ds
+        write_metadata_for_quasarscan(filename,'MOCK_v1_mockstreams_%s'%simnum,model)
+        print('loaded dataset MOCK_v1_mockstreams_%s, using model "%s" at redshift %.2f'%\
+              (simnum,model_name,ds.current_redshift))
+    else:
+        print('loaded dataset using model "%s" at redshift %.2f'%(model_name,ds.current_redshift))
+    if return_model:
+        return ds,model
+    else:
+        return ds
 
 def turn_off_yt_comments():
     yt.funcs.mylog.setLevel(50)
 
-def do_setup(setup_args):
-    max_size = lookup('box_size',setup_args)/2
-    n = lookup('n',setup_args)
+def do_setup(model):
+    max_size = model['box_size']/2
+    n = model['n']
+    
     x_vals = np.linspace(-max_size,max_size,n)
     y_vals = np.linspace(-max_size,max_size,n)
     z_vals = np.linspace(-max_size,max_size,n)
@@ -60,18 +48,11 @@ def do_setup(setup_args):
     xs = np.tile(x_vals,(n,n,1)).transpose((2,1,0))
     ys = np.tile(y_vals,(n,n,1)).transpose((0,1,2))
     zs = np.tile(z_vals,(n,n,1)).transpose((1,2,0))
-    
-    Rvir = lookup('Rvir',setup_args)
-    a = lookup('a',setup_args)
-    if a == 1.0:
-        redshift = lookup('z',setup_args)
-    else:
-        redshift = 1./a-1.
-    return (xs,ys,zs),Rvir,redshift
+    return (xs,ys,zs)
 
 #geometry section 
 #code leader: Parsa
-def identify_phases(background_grid, geo_args,Rvir):
+def identify_phases(background_grid, model):
     #geo_args options:
     #stream_rotation = 0 -> no rotation
     #stream_rotation = 1 -> 1 full rotation
@@ -84,11 +65,11 @@ def identify_phases(background_grid, geo_args,Rvir):
     #endpoint = 'random' -> randomize the endpoints
     #endpoint = 'fixed' -> use the fixed default endpoints
     #endpoint = [100,0,0] -> go to the point [100,0,0]
-    return geometry.identify_phases(background_grid,geo_args,Rvir).transpose((0,2,1))
+    return geometry.identify_phases(background_grid,model).transpose((0,2,1))
 
 #math section 
 #code leader: Jewon
-def create_fields(background_grid, phase_types, phys_args, Rvir):
+def create_fields(background_grid, phase_types, model):
     #phys_args options:
     #density_contrast = 1 -> no difference b/w stream and bulk, rho_s/rho_b = 1
     #density_contrast = 10 -> rho_s/rho_b = 10
@@ -99,37 +80,37 @@ def create_fields(background_grid, phase_types, phys_args, Rvir):
     #temperatures = 'constant' -> keep temperature constant inside the structure
     
     fields = {}
-    fields['density']=math.density_field(background_grid, phase_types, phys_args, Rvir)*mh.in_units('g')
-    fields['temperature']=math.temperature_field(background_grid, phase_types, phys_args)
-    fields['metallicity']=math.metallicity_field(background_grid, phase_types, phys_args)
-    velocity=math.velocity_field(background_grid, phase_types, Rvir)
+    fields['density']=math.density_field(background_grid, phase_types, model)*mh.in_units('g')
+    fields['temperature']=math.temperature_field(background_grid, phase_types, model)
+    fields['metallicity']=math.metallicity_field(background_grid, phase_types, model)
+    velocity=math.velocity_field(background_grid, phase_types, model)
     fields['velocity_x']=velocity[0]
     fields['velocity_y']=velocity[1]
     fields['velocity_z']=velocity[2]
+    fields['xs'] = background_grid[0]
+    fields['ys'] = background_grid[1]
+    fields['zs'] = background_grid[2]
+    fields['phase_types'] = phase_types
     return fields
 
 #yt section 
 #code leader: Vayun
-def convert_to_dataset(background_grid, fields,setup_args): 
-    filename = lookup('filename',setup_args)
+def convert_to_dataset(fields,filename): 
     #assuming that the 'fields' parameter has fields ordered with the following: densities, temperatures, metallicities.
-    return ytinterface.create_dataset(background_grid, fields, filename)
+    return ytinterface.create_dataset(fields, filename)
    
-def load_dataset(filename,redshift):
+def load_dataset(filename,model):
+    redshift = model['z']
     return ytinterface.load_ds(filename,redshift)
 
-def write_metadata_for_quasarscan(filename,fullname,setup_args,tolerance = .001):    
+def write_metadata_for_quasarscan(filename,fullname,model):    
     pathname = os.path.expanduser('~/quasarscan_data/galaxy_catalogs/%s'%fullname)
     if not os.path.exists(pathname):
         os.mkdir(pathname)
-    a = lookup('a',setup_args)
-    if a == 1.0:
-        redshift = lookup('z',setup_args)
-        a = 1./(1.+redshift)
-    else:
-        redshift = 1./a-1.
-    Mvir = lookup('Mvir',setup_args)
-    Rvir = lookup('Rvir',setup_args)
+    z = model['z']
+    a = 1.0/(1.0+z)
+    Mvir = model['Mvir']
+    Rvir = model['Rvir']
     center_x, center_y, center_z = 0.0,0.0,0.0
     L_x, L_y, L_z = 0,0,1
     all_lines = ["Metadata recorded on file %s with mockstreams version %s on date %s"%\
@@ -137,8 +118,12 @@ def write_metadata_for_quasarscan(filename,fullname,setup_args,tolerance = .001)
     all_lines.append(str(['a','Mvir','Rvir','center_x', 'center_y', 'center_z', 'L_x', 'L_y', 'L_z'])[1:-1].replace("'",""))
     
     current_line = ''
-    for quantity in ['a','Mvir','Rvir','center_x', 'center_y', 'center_z', 'L_x', 'L_y', 'L_z']:
+    required_quantities = ['a','Rvir','center_x', 'center_y', 'center_z', 'L_x', 'L_y', 'L_z']
+    for quantity in required_quantities:
         to_write = eval(quantity)
+        current_line += '%s, '%to_write
+    for quantity in set(model.keys())-set(required_quantities):
+        to_write = model[quantity]
         current_line += '%s, '%to_write
     all_lines.append(current_line[:-2])
     

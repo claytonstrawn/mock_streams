@@ -1,5 +1,4 @@
 import numpy as np
-from mock_streams.defaults import lookup
 
 def distance_to_line(x,y,z,linex,liney,linez):
     #x is a number between 0 and 1
@@ -18,21 +17,43 @@ def distance_to_line(x,y,z,linex,liney,linez):
         distances[i] = np.sqrt(dx+dy+dz)
     return np.amin(distances,axis=0)
 
-def min_distance_check(xs,ys,zs,throughline,geo_args,Rvir,n_line_points = 30):
-    stream_width = lookup('stream_width',geo_args)
-    endpoint = lookup('endpoint',geo_args)
-    interface_thickness = lookup('interface_thickness',geo_args)
-    linex,liney,linez = throughline(startpoint,endpoint,Rvir)(np.linspace(0,1,n_line_points))
-    all_distances = distance_to_line(xs,ys,zs,linex,liney,linez)
-    phase_types = xs*0.0
-    phase_types[all_distances < stream_width] = 1
-    phase_types[np.logical_and(stream_width<=all_distances,all_distances<stream_width+interface_thickness)] = 2
-    phase_types[all_distances >= stream_width+interface_thickness] = 3
+def min_distance_check(xs,ys,zs,throughline,model,n_line_points = 30):
+    startpoint = model['startpoint']
+    n_streams = model['n_streams']
+    endpoints = get_multiple_endpoints(model)
+    Rvir = model['Rvir']
+    interface_thickness = model['interface_thickness']
+    stream_width = model['stream_width']
+    if isinstance(stream_width,dict):
+        stream_width = stream_width[n_streams]
+    elif not isinstance(stream_width,list):
+        stream_width = [stream_width]*n_streams
+    elif isinstance(stream_width,list):
+        assert len(stream_width) == n_streams
+    if n_streams > 1:
+        assert isinstance(stream_width,list) and len(stream_width) == n_streams,(stream_width,n_streams)
+        np.random.shuffle(stream_width)
+    else:
+        stream_width = [stream_width]
+
+    for i,endpoint in enumerate(endpoints):
+        linex,liney,linez = throughline(startpoint,endpoint,Rvir,model)(np.linspace(0,1,n_line_points))
+        all_distances = distance_to_line(xs,ys,zs,linex,liney,linez)
+        phase_types = xs*0.0
+        stream_mask = all_distances < stream_width[i]
+        phase_types[stream_mask] = 1
+            
+        interface_mask = np.logical_and.reduce((stream_width[i]<=all_distances,
+                                                all_distances<stream_width[i]+interface_thickness,
+                                                phase_types == 0))
+        phase_types[interface_mask] = 2
+    phase_types[phase_types==0] = 3
     return phase_types
 
 
-def spiral_throughline(startpoint,endpoint,Rvir,b):
-    x1,y1,z1 = 0,0,0 #startpoint not allowed to change
+def spiral_throughline(startpoint,endpoint,Rvir,model):
+    b = model['stream_rotation']
+    x1,y1,z1 = startpoint
     x2,y2,z2 = endpoint
     def spiral_throughline_helper(t):
         theta2 = np.arccos(x2/Rvir)
@@ -44,7 +65,7 @@ def spiral_throughline(startpoint,endpoint,Rvir,b):
         return np.array([x,y,z])
     return spiral_throughline_helper
 
-def straight_throughline(startpoint,endpoint,Rvir,b):
+def straight_throughline(startpoint,endpoint,Rvir,model):
     x1,y1,z1 = startpoint
     x2,y2,z2 = endpoint
     def straight_throughline_helper(r):
@@ -59,8 +80,10 @@ def acceptable_distance(stream_width,stream_size_growth):
         return stream_width*r**stream_size_growth
     return acceptable_distance_helper
 
-def get_multiple_endpoints(n,geo_args,Rvir,random_spread = 1.0,off_plane_spread = 1.0):
-    first_endpoint = lookup('endpoint',geo_args)
+def get_multiple_endpoints(model,random_spread = 1.0,off_plane_spread = 1.0):
+    n = model['n_streams']
+    Rvir = model['Rvir']
+    first_endpoint = model['endpoint']
     if first_endpoint == 'random':
         theta = np.random.random()*2*np.pi
         x2 = Rvir*np.cos(theta)
@@ -82,17 +105,20 @@ def get_multiple_endpoints(n,geo_args,Rvir,random_spread = 1.0,off_plane_spread 
     return endpoints
         
 
-def radial_distance_check(xs,ys,zs,throughline,geo_args,Rvir,b):
-    n_streams = lookup('n_streams',geo_args)
-    stream_width = lookup('stream_width',geo_args)
+def radial_distance_check(xs,ys,zs,throughline,model):
+    Rvir = model['Rvir']
+    n_streams = model['n_streams']
+    stream_width = model['stream_width']
     if isinstance(stream_width,dict):
         stream_width = stream_width[n_streams]
-    elif not isinstance(stream_width,list) and n_streams==1:
-        stream_width = [stream_width]
-    startpoint = lookup('startpoint',geo_args)
-    endpoints = get_multiple_endpoints(n_streams,geo_args,Rvir)
-    interface_thickness = lookup('interface_thickness',geo_args)
-    stream_size_growth = lookup('stream_size_growth',geo_args)
+    elif not isinstance(stream_width,list):
+        stream_width = [stream_width]*n_streams
+    elif isinstance(stream_width,list):
+        assert len(stream_width) == n_streams
+    startpoint = model['startpoint']
+    endpoints = get_multiple_endpoints(model)
+    interface_thickness = model['interface_thickness']
+    stream_size_growth = model['stream_size_growth']
     if n_streams > 1:
         assert isinstance(stream_width,list) and len(stream_width) == n_streams
         np.random.shuffle(stream_width)
@@ -104,15 +130,16 @@ def radial_distance_check(xs,ys,zs,throughline,geo_args,Rvir,b):
     
     for i in range(n_streams):
         endpoint = endpoints[i]
-        x_line,y_line,z_line = throughline(startpoint,endpoint,Rvir,b)(rs/Rvir)
+        x_line,y_line,z_line = throughline(startpoint,endpoint,Rvir,model)(rs/Rvir)
         distance = np.sqrt((xs-x_line)**2+(ys-y_line)**2+(zs-z_line)**2)
         stream_distance = acceptable_distance(stream_width[i],stream_size_growth)(rs/Rvir)
     
         stream_mask = distance<stream_distance
         phase_types[stream_mask] = 1
     
-        interface_mask = np.logical_and(stream_distance <= distance, 
-                                    distance < stream_distance + interface_thickness)
+        interface_mask = np.logical_and.reduce((stream_distance <= distance, 
+                                    distance < stream_distance + interface_thickness,
+                                    phase_types == 0))
         phase_types[interface_mask] = 2
     
     bulk_mask = (phase_types==0)
@@ -120,17 +147,21 @@ def radial_distance_check(xs,ys,zs,throughline,geo_args,Rvir,b):
     
     return phase_types
 
-def slab_distance_check(xs,ys,zs,throughline,geo_args,Rvir,b,n_t = 60):
-    n_streams = lookup('n_streams',geo_args)
-    stream_width = lookup('stream_width',geo_args)
+def slab_distance_check(xs,ys,zs,throughline,model,n_t = 60):
+    Rvir = model['Rvir']
+    b = model['stream_rotation']
+    n_streams = model['n_streams']
+    stream_width = model['stream_width']
     if isinstance(stream_width,dict):
         stream_width = stream_width[n_streams]
-    elif not isinstance(stream_width,list) and n_streams==1:
-        stream_width = [stream_width]
-    startpoint = lookup('startpoint',geo_args)
-    endpoints = get_multiple_endpoints(n_streams,geo_args,Rvir)
-    interface_thickness = lookup('interface_thickness',geo_args)
-    stream_size_growth = lookup('stream_size_growth',geo_args)
+    elif not isinstance(stream_width,list):
+        stream_width = [stream_width]*n_streams
+    elif isinstance(stream_width,list):
+        assert len(stream_width) == n_streams
+    startpoint = model['startpoint']
+    endpoints = get_multiple_endpoints(model)
+    interface_thickness = model['interface_thickness']
+    stream_size_growth = model['stream_size_growth']
     if n_streams > 1:
         assert isinstance(stream_width,list) and len(stream_width) == n_streams
         np.random.shuffle(stream_width)
@@ -140,7 +171,7 @@ def slab_distance_check(xs,ys,zs,throughline,geo_args,Rvir,b,n_t = 60):
     phase_types = (xs*0).astype(int)
     ts = np.linspace(0,max(2,6*b),n_t)
     for i in range(n_streams):
-        p = throughline((0,0,0),endpoints[i],Rvir,b)(ts)
+        p = throughline((0,0,0),endpoints[i],Rvir,model)(ts)
         Rs = acceptable_distance(stream_width[i],stream_size_growth)(ts)
         for j in range(len(ts)-2):
             p1,p2,R1,R2 = p[:,j],p[:,j+2],Rs[j],Rs[j+2]
@@ -156,7 +187,8 @@ def slab_distance_check(xs,ys,zs,throughline,geo_args,Rvir,b,n_t = 60):
             h = np.sqrt(d1_sq-a1**2)
             R = R1+(R2-R1)/w*a1
             stream = (h<R)
-            interface = np.logical_and(h>=R,h<R+interface_thickness)
+            interface = np.logical_and.reduce((h>=R,h<R+interface_thickness,
+                                    phase_types[slab] == 0))
             phase_types.flat[np.flatnonzero(slab)[stream]] = 1
             phase_types.flat[np.flatnonzero(slab)[interface]] = 2
     bulk = (phase_types==0)
@@ -164,16 +196,14 @@ def slab_distance_check(xs,ys,zs,throughline,geo_args,Rvir,b,n_t = 60):
     return phase_types
 
 
-def identify_phases(background_grid,geo_args,Rvir):
-    stream_rotation = lookup('stream_rotation',geo_args)
-    dist_method = lookup('dist_method',geo_args)
+def identify_phases(background_grid,model):
+    stream_rotation = model['stream_rotation']
+    dist_method = model['dist_method']
 
     if stream_rotation == 0:
         throughline = straight_throughline
-        b=0.0
     else:
         throughline = spiral_throughline
-        b=stream_rotation
     
     if dist_method == 'min':
         distance_check = min_distance_check
@@ -185,4 +215,4 @@ def identify_phases(background_grid,geo_args,Rvir):
         assert False, 'Not implemented'
         
     xs,ys,zs = background_grid
-    return distance_check(xs,ys,zs,throughline,geo_args,Rvir,b)
+    return distance_check(xs,ys,zs,throughline,model)
