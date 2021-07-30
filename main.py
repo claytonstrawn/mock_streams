@@ -17,7 +17,7 @@ def create_mock(model_name = 'round_numbers',listargs = False,write_metadata = F
     phase_grid = identify_phases(background_grid, model)
     fields = create_fields(background_grid, phase_grid, model)
     filename = convert_to_dataset(fields,filename)
-    ds = load_dataset(filename,model)
+    ds = load_dataset(filename,model=model)
     if write_metadata:
         if write_metadata is True:
             simnum = '00'
@@ -98,8 +98,9 @@ def convert_to_dataset(fields,filename):
     #assuming that the 'fields' parameter has fields ordered with the following: densities, temperatures, metallicities.
     return ytinterface.create_dataset(fields, filename)
    
-def load_dataset(filename,model):
-    redshift = model['z']
+def load_dataset(filename,model=None,redshift=None):
+    if not redshift:
+        redshift = model['z']
     return ytinterface.load_ds(filename,redshift)
 
 def write_metadata_for_quasarscan(filename,fullname,model):    

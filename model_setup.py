@@ -43,6 +43,8 @@ def explain_model(model):
 def set_up_round_numbers(model):
     if model['box_size'] == 'Rvir':
         model['box_size'] = model['Rvir']*2
+    elif model['box_size'] == '2Rvir':
+        model['box_size'] = model['Rvir']*4
     model['Mvir'] = np.nan
 
 def set_up_M20(model):
@@ -84,6 +86,10 @@ def set_up_M20(model):
     model['a'] = 1.0/(1.0+z) #expansion_parameter
     if model['box_size'] == 'Rvir':
         model['box_size'] = model['Rvir']*2
+    elif model['box_size'] == '2Rvir':
+        model['box_size'] = model['Rvir']*4
+    else:
+        print(model['box_size'])
 
 required_for_startup = {}
 required_for_startup['round_numbers'] = ['Rvir','box_size']
