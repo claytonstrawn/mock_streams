@@ -47,6 +47,14 @@ def set_up_round_numbers(model):
         model['box_size'] = model['Rvir']*4
     model['Mvir'] = np.nan
 
+    model['stream_density_beta'] = model['beta']
+    model['bulk_density_beta'] = model['beta']
+    model['stream_temperature_beta'] = 0
+    model['bulk_temperature_beta'] = 0
+    model['stream_metallicity_beta'] = 0
+    model['interface_metallicity_beta'] = 0
+    model['bulk_metallicity_beta'] = 0
+
 def set_up_M20(model):
     Mvir = model['Mvir']
     z = model['z']
@@ -91,12 +99,28 @@ def set_up_M20(model):
     else:
         print(model['box_size'])
 
+    model['stream_density_beta'] = model['beta']
+    model['bulk_density_beta'] = model['beta']
+    model['stream_temperature_beta'] = 0
+    model['bulk_temperature_beta'] = 0
+    model['stream_metallicity_beta'] = 0
+    model['interface_metallicity_beta'] = 0
+    model['bulk_metallicity_beta'] = 0
+
+def set_up_vela(model):
+    if model['box_size'] == 'Rvir':
+        model['box_size'] = model['Rvir']*2
+    elif model['box_size'] == '2Rvir':
+        model['box_size'] = model['Rvir']*4
+
+
 required_for_startup = {}
-required_for_startup['round_numbers'] = ['Rvir','box_size']
+required_for_startup['round_numbers'] = ['Rvir','box_size','beta']
 required_for_startup['M20'] = ['Mvir','z','box_size','beta','s','eta','fh','ths','thh']
+required_for_startup['vela'] = ['Rvir','box_size']
 
 editable_not_required = {}
-editable_not_required['round_numbers'] = ['z','beta','n','interface_thickness','stream_metallicity',\
+editable_not_required['round_numbers'] = ['z','n','interface_thickness','stream_metallicity',\
                              'interface_metallicity','bulk_metallicity','stream_rotation',\
                              'endpoint','dist_method','n_streams','startpoint',\
                              'stream_size_growth','stream_width','stream_temperature',\
@@ -104,15 +128,30 @@ editable_not_required['round_numbers'] = ['z','beta','n','interface_thickness','
 editable_not_required['M20'] = ['n','interface_thickness','stream_metallicity',\
                              'interface_metallicity','bulk_metallicity','stream_rotation',\
                              'endpoint','dist_method','n_streams']
+editable_not_required['vela'] = ['z','stream_density_beta','bulk_density_beta','stream_temperature_beta',\
+                                'bulk_temperature_beta','stream_metallicity_beta','interface_metallicity_beta',\
+                                'bulk_metallicity_beta','n','interface_thickness','stream_metallicity',\
+                             'interface_metallicity','bulk_metallicity','stream_rotation',\
+                             'endpoint','dist_method','n_streams','startpoint',\
+                             'stream_size_growth','stream_width','stream_temperature',\
+                             'bulk_temperature','stream_density','bulk_density']
 
 non_editable_fixed = {}
-non_editable_fixed['round_numbers'] = ['density_contrast','Mvir']
-non_editable_fixed['M20'] = ['Rvir','a','stream_size_growth','stream_width','density_contrast','stream_temperature',\
-                          'bulk_temperature','stream_density','bulk_density']
+non_editable_fixed['round_numbers'] = ['density_contrast','Mvir',\
+                                'stream_density_beta','bulk_density_beta','stream_temperature_beta',\
+                                'bulk_temperature_beta','stream_metallicity_beta','interface_metallicity_beta',\
+                                'bulk_metallicity_beta']
+non_editable_fixed['M20'] = ['Rvir','a','stream_size_growth','stream_width','density_contrast',\
+                            'stream_temperature','bulk_temperature','stream_density','bulk_density'\
+                            'stream_density_beta','bulk_density_beta','stream_temperature_beta',\
+                                'bulk_temperature_beta','stream_metallicity_beta','interface_metallicity_beta',\
+                                'bulk_metallicity_beta']
+non_editable_fixed['vela'] = []
 
 calculate_fixed_params = {}
 calculate_fixed_params['round_numbers'] = set_up_round_numbers
 calculate_fixed_params['M20'] = set_up_M20
+calculate_fixed_params['vela'] = set_up_vela
 
 
 def all_lists_disjoint(a,b,c):

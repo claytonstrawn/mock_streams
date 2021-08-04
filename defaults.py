@@ -30,7 +30,14 @@ bulk_density = 10.**-4 #cm-3
 stream_metallicity = 10.**-0.05 #Zsun
 interface_metallicity = 10.**0.03 #Zsun
 bulk_metallicity = 10.**0.23 #Zsun
-beta = 1.5 #from simulations
+stream_density_beta = 2.29 #from simulations
+bulk_density_beta = 1.54
+stream_temperature_beta = -0.80
+bulk_temperature_beta = 0.54
+stream_metallicity_beta = 1.17
+interface_metallicity_beta = 1.10 #from simulations
+bulk_metallicity_beta = 0.46
+beta = 1.5
 
 s = 1.0
 eta = 1.0

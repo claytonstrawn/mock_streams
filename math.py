@@ -2,14 +2,38 @@ import numpy as np
 import unyt
 
 def temperature_field(background_grid, phase_types, model):
+    Rvir = model['Rvir']
+    
+    xs = background_grid[0]
+    ys = background_grid[1]
+    zs = background_grid[2]
+
+    temp_0 = xs * 0.0
+    temperature = xs * 0.0
+    beta = xs * 0.0
+    rs = np.sqrt(xs**2+ys**2+zs**2)
+
+    B1 = model['stream_temperature_beta']
+    B3 = model['bulk_temperature_beta']
+    if B1<0 or B3<0:
+        print('warning! beta is intended to be positive (higher densities in center)')
+    B2 = (B1 + B3) / 2
+
     T1 = model['stream_temperature']
     T3 = model['bulk_temperature']
     T2 = np.sqrt(T1*T3)
 
-    temperature = background_grid[0] * 0.0
-    temperature[phase_types == 1] = T1
-    temperature[phase_types == 2] = T2
-    temperature[phase_types == 3] = T3
+    temp_0[phase_types == 1] = T1
+    temp_0[phase_types == 2] = T2
+    temp_0[phase_types == 3] = T3
+
+    beta[phase_types == 1] = B1
+    beta[phase_types == 2] = B2
+    beta[phase_types == 3] = B3
+
+    temperature[(rs/Rvir) > 0.1] = temp_0[rs/Rvir > 0.1] * (rs[rs/Rvir > 0.1]/Rvir)**-beta[rs/Rvir > 0.1]
+    temperature[(rs/Rvir) <= 0.1] = temp_0[rs/Rvir <= 0.1] * 0.1**-beta[rs/Rvir <= 0.1]
+
     return temperature
 
 def density_field(background_grid, phase_types, model):
@@ -21,28 +45,63 @@ def density_field(background_grid, phase_types, model):
 
     rho_0 = xs * 0.0
     density = xs * 0.0
+    beta = xs * 0.0
     rs = np.sqrt(xs**2+ys**2+zs**2)
-    beta = model['beta']
-    if beta<0:
+
+    B1 = model['stream_density_beta']
+    B3 = model['bulk_density_beta']
+    if B1<0 or B3<0:
         print('warning! beta is intended to be positive (higher densities in center)')
+    B2 = (B1 + B3) / 2
     
     R1 = model['stream_density']
     R3 = model['bulk_density']
-    R2 = np.sqrt(R1*R3)    
+    R2 = np.sqrt(R1*R3)
     
     rho_0[phase_types == 1] = R1
     rho_0[phase_types == 2] = R2
     rho_0[phase_types == 3] = R3
+
+    beta[phase_types == 1] = B1
+    beta[phase_types == 2] = B2
+    beta[phase_types == 3] = B3
     
-    density[(rs/Rvir) > 0.1] = rho_0[rs/Rvir > 0.1] * (rs[rs/Rvir > 0.1]/Rvir)**-beta
-    density[(rs/Rvir) <= 0.1] = rho_0[rs/Rvir <= 0.1] * 0.1**-beta
+    density[(rs/Rvir) > 0.1] = rho_0[rs/Rvir > 0.1] * (rs[rs/Rvir > 0.1]/Rvir)**-beta[rs/Rvir > 0.1]
+    density[(rs/Rvir) <= 0.1] = rho_0[rs/Rvir <= 0.1] * 0.1**-beta[rs/Rvir <= 0.1]
     return density
 
 def metallicity_field(background_grid, phase_types, model):
-    metallicity = background_grid[0] * 0.0
-    metallicity[phase_types == 1] = model['stream_metallicity']
-    metallicity[phase_types == 2] = model['interface_metallicity']
-    metallicity[phase_types == 3] = model['bulk_metallicity']
+    Rvir = model['Rvir']
+    
+    xs = background_grid[0]
+    ys = background_grid[1]
+    zs = background_grid[2]
+
+    met_0 = xs * 0.0
+    metallicity = xs * 0.0
+    beta = xs * 0.0
+    rs = np.sqrt(xs**2+ys**2+zs**2)
+
+    B1 = model['stream_metallicity_beta']
+    B2 = model['interface_metallicity_beta']
+    B3 = model['bulk_metallicity_beta']
+    if B1<0 or B2 < 0 or B3<0:
+        print('warning! beta is intended to be positive (higher densities in center)')
+
+    M1 = model['stream_metallicity']
+    M2 = model['interface_metallicity']
+    M3 = model['bulk_metallicity']
+
+    met_0[phase_types == 1] = model['stream_metallicity']
+    met_0[phase_types == 2] = model['interface_metallicity']
+    met_0[phase_types == 3] = model['bulk_metallicity']
+
+    beta[phase_types == 1] = B1
+    beta[phase_types == 2] = B2
+    beta[phase_types == 3] = B3
+
+    metallicity[(rs/Rvir) > 0.1] = met_0[rs/Rvir > 0.1] * (rs[rs/Rvir > 0.1]/Rvir)**-beta[rs/Rvir > 0.1]
+    metallicity[(rs/Rvir) <= 0.1] = met_0[rs/Rvir <= 0.1] * 0.1**-beta[rs/Rvir <= 0.1]
     return metallicity
 
 def velocity_field(background_grid, phase_types,model):
