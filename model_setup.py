@@ -38,7 +38,10 @@ def describe_model(model_name):
     
 def explain_model(model):
     for key in model.keys():
-        pass
+        if key in explanations.keys():
+            print(key,":",explanations[key])
+        else:
+            print(key,":",model[key])
 
 def set_up_round_numbers(model):
     if model['box_size'] == 'Rvir':
@@ -77,7 +80,7 @@ def set_up_M20(model):
     bulk_temperature = thh*Tvir
     stream_density = rho_0s
     bulk_density = rho_0s/delta
-    stream_width = {1:[Rs],2:[Rs]*2,3:[Rs]*3,4:[Rs]*4,5:[Rs]*5}
+    stream_width = {1:[Rs],2:[Rs]*2,3:[Rs]*3,4:[Rs]*4}
     stream_size_growth = beta/2
 
     #determined by above, do not overwrite
@@ -158,6 +161,55 @@ def all_lists_disjoint(a,b,c):
     overlap = (set(a)&set(b))|((set(a)|set(b))&set(c))
     return overlap
     
+explanations = {'Rvir':'(kpc), virial radius',
+                'box_size':'(kpc), width of mock region, default:"Rvir"',
+                'Mvir':'(Msun), Virial mass, or total halo mass. default:%s, range:[10^11-10^13]'%lookup('Mvir'),
+                'z':'(unitless), redshift, default:%s, range:[1-4]'%lookup('z'),
+                'beta':'(unitless) powerlaw controlling bulk density growth, default:%s, range:[1-3]'%lookup('beta'),
+                's':'(unitless) normalized "amount" of gas flowing in along each stream, default:'+
+                    '%s, range:[0.3-3.0].(had a tilde over s in M20)'%lookup('s'),
+                'eta':'(unitless) normalized speed of streams w.r.t. Vvir, default:'
+                    '%s, range:[0.5-sqrt(2)]'%lookup('eta'), 
+                'fh':'(unitless) normalized "amount" of gas in hot medium at Rvir, default:'
+                    '%s, range:[1.0-3.0] (had a tilde over fh in M20)'%lookup('fh'),
+                'ths':'(unitless) normalized temperature of gas in stream w.r.t 1.5e4 K (cooling peak), default:'
+                    '%s, range:[0.5-2.0]'%lookup('ths'),
+                'thh':'(unitless) normalized temperature of gas in stream w.r.t Tvir, default:'
+                    '%s, range:[0.5-2.0]'%lookup('thh'),
+                'n':'(unitless) number grid resolution elements in each direction, default:%s.'%lookup('n')+
+                    'higher n means slower mock but better data',
+                'interface_thickness':'(kpc) overall (constant) interface thickness, default:'+
+                    '%s.'%lookup('interface_thickness'),
+                'stream_metallicity':'(Zsun) overall (constant) metallicity of the streams, default:'+
+                    '%s.'%lookup('stream_metallicity'),\
+                'interface_metallicity':'(Zsun) overall (constant) metallicity of the interface, default:'+
+                    '%s.'%lookup('interface_metallicity'),\
+                'bulk_metallicity':'(Zsun) overall (constant) metallicity of the bulk, default:'+
+                    '%s.'%lookup('bulk_metallicity'),\
+                'stream_rotation':'amount of rotation of the streams. The stream throughline is defined'+
+                    'to be an Archimedean spiral, and is scaled so that stream_rotation = 1 means making'+
+                    'one full rotation. default: %s, range [0.0-0.4]'%lookup('stream_rotation'),\
+                'endpoint':'(kpc) 3D location of point where stream interects virial radius sphere, '+
+                    'default is "random", which will put point anywhere near xy plane. Other streams are '+
+                    'designed to be semi-equally spaced in azimuthal angle.',
+                'dist_method':'(string) Method of determining distance to stream throughline, affecting'+
+                    'stream width. Default: %s, recommend "slab" if stream_rotation > 0'%lookup('dist_method'),
+                'n_streams':'(int) Number of streams generated, equally spaced in angle default: '+
+                    '%s, range = [1-4]'%lookup('n_streams'),
+                'startpoint':'(kpc) Origin of streams. Some models require the center of the virial radius.'+
+                    ' default: %s'%lookup('startpoint'),
+                'stream_size_growth':'(unitless) powerlaw regulating size of streams as function of radius.'+
+                    '(streams are smaller on the inner halo). default: %s'%lookup('stream_size_growth'),
+                'stream_width':'(dict of lists of kpc) Size the streams reach at Rvir (according to dist_method).'+
+                    ' Is a dictionary to include results for n_streams in [1-4]. default: %s'%lookup('n_streams'),
+                'stream_temperature':'(K) Overall temperature of streams, constant for now. '+
+                    'default: %s'%lookup('stream_temperature'),
+                'bulk_temperature':'(K) Overall temperature of bulk, constant for now. '+
+                    'default: %s'%lookup('bulk_temperature'),
+                'stream_density':'(cm^-3) Density of stream at Rvir, will increase as approach galaxy '+
+                    'default: %s'%lookup('stream_density'),
+                'bulk_density':'(cm^-3) Density of bulk at Rvir, will increase as approach galaxy '+
+                    'default: %s'%lookup('bulk_density'),}
 
 for model_name in ['round_numbers','M20']:
     overlap = all_lists_disjoint(required_for_startup[model_name],
@@ -165,29 +217,5 @@ for model_name in ['round_numbers','M20']:
                                  non_editable_fixed[model_name])
     assert not overlap, 'parameters "%s" repeat in multiple lists under model %s!'%(overlap,model_name)
 
-"""    
-explanations = {'Rvir':'(kpc), virial radius',
-                'box_size':'(kpc), width of mock region, default:"Rvir"',
-                'Mvir':'(Msun), Virial mass, or total halo mass. default:%s, range:[10^11-10^13]'%lookup('Mvir'),
-                'z':'(unitless), redshift, default:1, range:[1-4]'%lookup('z'),
-                'beta':'(unitless) powerlaw controlling bulk density growth, default:%s, range:[1-3]'%lookup('beta'),
-                's':'(unitless) normalized "amount" of gas flowing in along each stream, default:'+
-                    '%s, range:[0.3-3.0].(had a tilde over s in M20)'%lookup('s'),
-                'eta':'(unitless) normalized speed of streams w.r.t. Vvir, default:'
-                    '%s, range:[0.5-sqrt(2)]'%lookup('eta'), 
-                'fh':'(unitless) normalized "amount" of gas in hot medium at Rvir, default:'
-                    '%s, range:[1.0-3.0]'%lookup('fh'),
-                'ths':'(unitless) normalized temperature of gas in stream w.r.t 1.5e4 K (cooling peak), default:'
-                    '%s, range:[0.5-2.0]'%lookup('ths'),
-                'thh':'(unitless) normalized temperature of gas in stream w.r.t Tvir, default:'
-                    '%s, range:[0.5-2.0]'%lookup('thh'),
-                'n':'(unitless) number grid resolution elements in each direction, default:%s.'%lookup('n')+
-                    'higher n means slower mock but better data',
-                'interface_thickness':'(kpc) overall (constant) interface thickness default:'+
-                    '%s.'%lookup('interface_thickness'),
-                'stream_metallicity',\
-                             'interface_metallicity','bulk_metallicity','stream_rotation',\
-                             'endpoint','dist_method','n_streams','startpoint',\
-                             'stream_size_growth','stream_width','stream_temperature',\
-                             'bulk_temperature','stream_density','bulk_density'
-"""
+   
+
