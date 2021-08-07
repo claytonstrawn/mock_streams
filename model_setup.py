@@ -116,12 +116,20 @@ def set_up_vela(model):
     elif model['box_size'] == '2Rvir':
         model['box_size'] = model['Rvir']*4
     model['Mvir'] = np.nan
-
+    model['stream_temperature'] = model['vela_stream_temperature_Rvir']
+    model['bulk_temperature'] = model['vela_bulk_temperature_Rvir']
+    model['stream_density'] = model['vela_stream_density_Rvir']
+    model['bulk_density'] = model['vela_bulk_density_Rvir']
+    model['stream_metallicity'] = model['vela_stream_metallicity_Rvir']
+    model['interface_metallicity'] = model['vela_interface_metallicity_Rvir']
+    model['bulk_metallicity'] = model['vela_bulk_metallicity_Rvir']
 
 required_for_startup = {}
 required_for_startup['round_numbers'] = ['Rvir','box_size','beta']
 required_for_startup['M20'] = ['Mvir','z','box_size','beta','s','eta','fh','ths','thh']
-required_for_startup['vela'] = ['Rvir','box_size']
+required_for_startup['vela'] = ['Rvir','box_size','vela_stream_temperature_Rvir','vela_bulk_temperature_Rvir',\
+                                'vela_stream_density_Rvir','vela_bulk_density_Rvir','vela_stream_metallicity_Rvir',\
+                                'vela_interface_metallicity_Rvir','vela_bulk_metallicity_Rvir']
 
 editable_not_required = {}
 editable_not_required['round_numbers'] = ['z','n','interface_thickness','stream_metallicity',\
@@ -134,11 +142,9 @@ editable_not_required['M20'] = ['n','interface_thickness','stream_metallicity',\
                              'endpoint','dist_method','n_streams']
 editable_not_required['vela'] = ['z','stream_density_beta','bulk_density_beta','stream_temperature_beta',\
                                 'bulk_temperature_beta','stream_metallicity_beta','interface_metallicity_beta',\
-                                'bulk_metallicity_beta','n','interface_thickness','stream_metallicity',\
-                             'interface_metallicity','bulk_metallicity','stream_rotation',\
+                                'bulk_metallicity_beta','n','interface_thickness','stream_rotation',\
                              'endpoint','dist_method','n_streams','startpoint',\
-                             'stream_size_growth','stream_width','stream_temperature',\
-                             'bulk_temperature','stream_density','bulk_density']
+                             'stream_size_growth','stream_width']
 
 non_editable_fixed = {}
 non_editable_fixed['round_numbers'] = ['density_contrast','Mvir',\
@@ -150,7 +156,9 @@ non_editable_fixed['M20'] = ['Rvir','a','stream_size_growth','stream_width','den
                             'stream_density_beta','bulk_density_beta','stream_temperature_beta',\
                                 'bulk_temperature_beta','stream_metallicity_beta','interface_metallicity_beta',\
                                 'bulk_metallicity_beta']
-non_editable_fixed['vela'] = []
+non_editable_fixed['vela'] = ['stream_temperature','stream_metallicity',\
+                             'interface_metallicity','bulk_metallicity',
+                             'bulk_temperature','stream_density','bulk_density']
 
 calculate_fixed_params = {}
 calculate_fixed_params['round_numbers'] = set_up_round_numbers
