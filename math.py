@@ -15,8 +15,6 @@ def temperature_field(background_grid, phase_types, model):
 
     B1 = model['stream_temperature_beta']
     B3 = model['bulk_temperature_beta']
-    if B1<0 or B3<0:
-        print('warning! beta is intended to be positive (higher densities in center)')
     B2 = (B1 + B3) / 2
 
     T1 = model['stream_temperature']
@@ -86,7 +84,7 @@ def metallicity_field(background_grid, phase_types, model):
     B2 = model['interface_metallicity_beta']
     B3 = model['bulk_metallicity_beta']
     if B1<0 or B2 < 0 or B3<0:
-        print('warning! beta is intended to be positive (higher densities in center)')
+        print('warning! beta is intended to be positive (higher metallicities in center)')
 
     M1 = model['stream_metallicity']
     M2 = model['interface_metallicity']
