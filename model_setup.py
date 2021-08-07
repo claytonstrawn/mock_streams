@@ -115,6 +115,7 @@ def set_up_vela(model):
         model['box_size'] = model['Rvir']*2
     elif model['box_size'] == '2Rvir':
         model['box_size'] = model['Rvir']*4
+    model['Mvir'] = np.nan
 
 
 required_for_startup = {}
