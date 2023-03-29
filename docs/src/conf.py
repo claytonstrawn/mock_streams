@@ -17,7 +17,7 @@
 
 # -- Project information -----------------------------------------------------
 
-project = 'quasarscan'
+project = 'mock_streams'
 copyright = '2021, Clayton Strawn'
 author = 'Clayton Strawn'
 
