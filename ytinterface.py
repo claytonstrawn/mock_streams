@@ -25,7 +25,6 @@ def create_dataset(fields, filename): #assuming that the 'fields' parameter has 
     return filename
     
 def load_ds(filename,redshift):
-    print(filename)
     temp_ds = yt.load(filename)
 
     def density(field, data):
