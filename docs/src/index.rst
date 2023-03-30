@@ -1,5 +1,4 @@
 Welcome to the mock_streams documentation!
-======================================
 
 Introduction
 ^^^^^^^^^^^^
